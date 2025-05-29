@@ -22,7 +22,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ You need a Telegram username set in your profile to register.")
         return
     try:
-        res = requests.post(f"{API_URL}/register", json={"handle": handle, "password": password})
+        res = requests.post(f"{API_URL}/auth/register", json={"handle": handle, "password": password})
         if res.status_code == 200:
             await update.message.reply_text("✅ Successfully registered! Now you can login in the app to get Started")
         else:
@@ -44,7 +44,7 @@ async def change_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        res = requests.post(f"{API_URL}/change-password", json={
+        res = requests.post(f"{API_URL}/auth/change-password", json={
             "handle": handle,
             "new_password": new_password
         })

@@ -3,5 +3,5 @@ from datetime import datetime, timedelta
 
 
 class User(BaseModel):
-    tele_handle: str
-    hashed_password: str
+    handle: str
+    password: str
