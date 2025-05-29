@@ -1,80 +1,124 @@
-import { Text, View, StyleSheet, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from "react-native";
-import { responsiveHeight, responsiveWidth } from 'react-native-responsive-dimensions';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+} from "react-native";
+import {
+  responsiveHeight,
+  responsiveWidth,
+} from "react-native-responsive-dimensions";
 import { RFValue } from "react-native-responsive-fontsize";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from 'expo-router';
-import KeyboardAvoidingContatiner from '../components/KeyboardAvoidingContainer'
+import { useRouter } from "expo-router";
+import KeyboardAvoidingContatiner from "../components/KeyboardAvoidingContainer";
 
 export default function Index() {
   const router = useRouter();
   return (
     <KeyboardAvoidingContatiner>
-    <SafeAreaView style={styles.container}>
-      <View style={styles.upperWrapper}>
-        <Image style={styles.logo} resizeMode='contain' source={require('../assets/images/logo.png')}/>
-        <Text style={styles.title}>QuickLoad</Text>
-      </View>
-      <View style={styles.lowerWrapper}>
-        <View>
-          <Text style={{color: "white", marginVertical: responsiveHeight(1), fontSize: RFValue(15)}}>Telegram Handle:</Text>
-          <TextInput style={styles.textBox} placeholder="Do not include '@'"></TextInput>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.upperWrapper}>
+          <Image
+            style={styles.logo}
+            resizeMode="contain"
+            source={require("../assets/images/logo.png")}
+          />
+          <Text style={styles.title}>QuickLoad</Text>
         </View>
-        <View>
-          <Text style={{color: "white", marginVertical: responsiveHeight(1), fontSize: RFValue(15)}}>Password:</Text>
-          <TextInput style={styles.textBox} secureTextEntry={true} placeholder="Enter your password"></TextInput>
+        <View style={styles.lowerWrapper}>
+          <View>
+            <Text
+              style={{
+                color: "white",
+                marginVertical: responsiveHeight(1),
+                fontSize: RFValue(15),
+              }}
+            >
+              Telegram Handle:
+            </Text>
+            <TextInput
+              style={styles.textBox}
+              placeholder="Do not include '@'"
+            ></TextInput>
+          </View>
+          <View>
+            <Text
+              style={{
+                color: "white",
+                marginVertical: responsiveHeight(1),
+                fontSize: RFValue(15),
+              }}
+            >
+              Password:
+            </Text>
+            <TextInput
+              style={styles.textBox}
+              secureTextEntry={true}
+              placeholder="Enter your password"
+            ></TextInput>
+          </View>
+          <TouchableOpacity
+            style={{ marginVertical: responsiveHeight(2) }}
+            onPress={() => router.push("/register")}
+          >
+            <Text style={{ color: "#EF7C00" }}>
+              Don't have an account? Create one.
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Proceed</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={{marginVertical: responsiveHeight(2)}} onPress={()=>router.push("/register")}>
-          <Text style={{color: "#EF7C00"}}>Don't have an account? Create one.</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Proceed</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
     </KeyboardAvoidingContatiner>
   );
 }
 
 const styles = StyleSheet.create({
-  container : {
-    flex : 1,
-    backgroundColor: '#003D7C',
+  container: {
+    flex: 1,
+    backgroundColor: "#003D7C",
   },
-  upperWrapper : {
+  upperWrapper: {
     paddingVertical: responsiveHeight(5),
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: '#EF7C00'
+    backgroundColor: "#EF7C00",
   },
-  title : {
-    fontFamily : "Epilogue-ExtraBold",
+  title: {
+    fontFamily: "Epilogue-ExtraBold",
     fontWeight: "bold",
     color: "white",
     marginVertical: responsiveWidth(5),
-    fontSize : RFValue(40)
+    fontSize: RFValue(40),
   },
-  logo : {
+  logo: {
     width: responsiveWidth(20),
     height: responsiveHeight(20),
   },
-  lowerWrapper : {
+  lowerWrapper: {
     marginVertical: responsiveHeight(10),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: responsiveWidth(5),
-
   },
-  textBox : {
+  textBox: {
     borderRadius: 10,
     width: responsiveWidth(75),
     backgroundColor: "white",
-    marginVertical: responsiveHeight(2)
+    marginVertical: responsiveHeight(2),
   },
-  button : {
+  button: {
     marginVertical: responsiveHeight(10),
     borderRadius: 10,
-    backgroundColor: '#EF7C00',
+    backgroundColor: "#EF7C00",
     paddingVertical: responsiveHeight(2),
     paddingHorizontal: responsiveWidth(5),
   },
@@ -82,5 +126,5 @@ const styles = StyleSheet.create({
     fontFamily: "Epilogue-ExtraBold",
     fontSize: RFValue(20),
     color: "white",
-  }
-})
+  },
+});
