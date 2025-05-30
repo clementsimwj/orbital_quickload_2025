@@ -71,7 +71,10 @@ export default function Index() {
               Don't have an account? Create one.
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => router.push("/home")}
+          >
             <Text style={styles.buttonText}>Proceed</Text>
           </TouchableOpacity>
         </View>
