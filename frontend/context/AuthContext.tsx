@@ -2,6 +2,7 @@ import { useContext, createContext, useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 import { Text, SafeAreaView, Alert } from "react-native";
 import axios from "axios";
+
 type AuthContextType = {
   token: string | null;
   login: (username: string, password: string) => Promise<boolean>;
