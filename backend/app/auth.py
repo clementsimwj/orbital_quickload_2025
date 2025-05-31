@@ -67,7 +67,7 @@ async def register(request: RegisterUser):
 async def login(form: Annotated[OAuth2PasswordRequestForm, Depends()]):
     existing_user = users_collection.find_one({"handle": form.username})
     if not existing_user or not pwd_context.verify(form.password, existing_user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid Credentials")
+        raise HTTPException(status_code=401, detail="Invalid Credentials. Make sure you update any changes to your telegram handle!")
     #Create Encoded Token:
     user_id = existing_user["user_id"]
     expiration = datetime.now(timezone.utc) + timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
@@ -107,7 +107,7 @@ async def update_handle(data: UpdateHandle):
     )
     return {"message" : "Updated Telegram Handle Successfully"}
 
-
+#Get the user_id and user_handle
 def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -115,7 +115,9 @@ def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
         if user_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                                 detail='Could not validate user.')
-        return {'user_id': user_id}
+        existing_user = users_collection.find_one({"user_id": user_id})
+        user_handle = existing_user["handle"]
+        return {'user_id': user_id, "handle" : user_handle}
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Could not validate user.')

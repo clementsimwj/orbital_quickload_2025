@@ -22,9 +22,7 @@ async def user(user: user_dependency):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
     return {"User": user}
-
-
-
-
+#Returns 
+#{ "User" : {"user_id": user_id, "user_handle": user_handle}}
 
 

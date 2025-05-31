@@ -112,6 +112,17 @@ export default function Index() {
         >
           5. Once you have successfully registered, you can login using the app!
         </Text>
+        <Text
+          style={{
+            color: "white",
+            fontWeight: "bold",
+            fontSize: RFValue(12),
+            fontStyle: "italic",
+            marginBottom: responsiveHeight(2),
+          }}
+        >
+          6. If you have trouble logging in, do /update to update any change in your credentials like Telegram Handle
+        </Text>
       </View>
       <TouchableOpacity
         style={styles.button}
