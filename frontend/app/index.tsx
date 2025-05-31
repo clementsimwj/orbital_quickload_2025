@@ -20,15 +20,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
+import MachineData from "@/components/MachineData";
+import Dropdown from '../components/Dropdown';
 import axios from "axios";
 
-interface DropdownItem {
-  id: string;
-  label: string;
-  value: string;
-}
-
-interface Washers {
+interface Washer {
   id: string;
   name: string;
   status: string;
@@ -36,48 +32,53 @@ interface Washers {
 }
 
 export default function Index() {
+  //Authentication Check:
   const { token, logout, isAuthenticated, isLoading } = useAuth();
   const [userData, setUserData] = useState<String>();
   const [loadingUser, setLoadingUser] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
-  const options: DropdownItem[] = [
+
+  //Will be taken from database
+  const items = [
     { id: "1", label: "Ridge View Residential College", value: "rvrc" },
     { id: "2", label: "Residential College 4", value: "rc4" },
     { id: "3", label: "Tembusu College", value: "tc" },
     { id: "4", label: "College of Alice and Peter Tan", value: "capt" },
     { id: "5", label: "NUSC", value: "nusc" },
     { id: "6", label: "Acacia College", value: "ac" },
-    ];
-
-  const washerData: Record<string, Washers[]> = {
-    rvrc: [
-      { id: "1", name: "Washer 1", status: "Available" },
-      { id: "2", name: "Washer 2", status: "In-Use", time: "10 mins" },
+  ]
+  const laundryData: Record<string, Washer[]> = {
+        rvrc: [
+      { id: "1", name: "RVRC Washer 1", status: "Available", time: "" },
+      { id: "2", name: "RVRC Washer 2", status: "In-Use", time: "10" },
     ],
     rc4: [
-      { id: "1", name: "RC4 Washer 1", status: "Available" },
-      { id: "2", name: "RC4 Washer 2", status: "Available" },
+      { id: "1", name: "RC4 Washer 1", status: "Available", time:"" },
+      { id: "2", name: "RC4 Washer 2", status: "Available", time:"" },
     ],
     tc: [
-      { id: "1", name: "Tembu Washer 1", status: "Available" },
-      { id: "2", name: "Tembu Washer 2", status: "Available" },
+      { id: "1", name: "Tembu Washer 1", status: "Available", time:"" },
+      { id: "2", name: "Tembu Washer 2", status: "Available", time:"" },
     ],
     capt: [
-      { id: "1", name: "Capt Washer 1", status: "In-Use", time: "20 mins" },
-      { id: "2", name: "Capt Washer 2", status: "Available" },
+      { id: "1", name: "Capt Washer 1", status: "In-Use", time: "20" },
+      { id: "2", name: "Capt Washer 2", status: "Available", time:"" },
     ],
     nusc: [
-      { id: "1", name: "Nusc Washer 1", status: "In-Use", time: "15 mins" },
-      { id: "2", name: "Nusc Washer 2", status: "Available" },
+      { id: "1", name: "NUSC Washer 1", status: "In-Use", time: "15" },
+      { id: "2", name: "NUSC Washer 2", status: "Available", time:"" },
     ],
     ac: [
-      { id: "1", name: "Acacia Washer 1", status: "In-Use", time: "30 mins" },
-      { id: "2", name: "Acacia Washer 2", status: "Available" },
+      { id: "1", name: "Acacia Washer 1", status: "In-Use", time: "30" },
+      { id: "2", name: "Acacia Washer 2", status: "Available", time:"" },
     ],
-  };
-  const [selectedItem, setSelectedItem] = useState(options[0]);
-  const machines = washerData[selectedItem.value as keyof typeof washerData]; // this guarantess that selectedItem.value is a key for washerData
+  }
 
+  const [selectedResidence, setSelectedResidence] = useState<string>("");
+
+  const handleSelect = (item: any) => {
+    console.log("Selected: ", item)
+    setSelectedResidence(item.value);
+  };
 
   useEffect(() => {
     if(isAuthenticated && token) {
@@ -104,19 +105,7 @@ export default function Index() {
   }
   if (!isAuthenticated) return <Redirect href='/login'/>
 
-  const handleSelect = (item: DropdownItem) => {
-    setSelectedItem(item);
-    setIsOpen(false);
-  };
-
-  const renderDropdownItem = (item: DropdownItem) => (
-    <TouchableOpacity
-      onPress={() => handleSelect(item)}
-      style={styles.selectionBox}
-    >
-      <Text>{item.label}</Text>
-    </TouchableOpacity>
-  );
+  const machines = selectedResidence ? laundryData[selectedResidence] : [];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -129,53 +118,27 @@ export default function Index() {
         </View>
         {userData ? (<Text style={styles.user}>{userData}</Text>) : (<Text style={styles.user}>Unknown User!</Text>)}
       </View>
-      <TouchableOpacity
-        onPress={() => setIsOpen(!isOpen)}
-        style={[styles.selectionBox, { marginTop: "20%" }]}
-      >
-        <Text>{selectedItem ? selectedItem.label : "Select option"}</Text>
-        <Image
-          source={require("../assets/images/dropdownArrow.png")}
-          resizeMode="contain"
-          style={{ width: 15 }}
-        />
-      </TouchableOpacity>
-
-      {isOpen && (
-        <View>
-          <FlatList
-            data={options}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => renderDropdownItem(item)}
-            showsVerticalScrollIndicator={false}
+      <View style={{alignItems: 'flex-start', justifyContent: 'center', marginVertical: responsiveHeight(2)}}>
+          <Text style={{marginBottom: responsiveHeight(1), fontSize: RFValue(15), color: "#c8cac9"}}>Residence:</Text>
+          <Dropdown label="Select your Residences: "
+                    items = {items}
+                    onSelect={handleSelect}/>
+      </View>
+      <Text style={{fontSize: RFValue(15), color: "#c8cac9", fontWeight:'bold'}}>Washing Machine Status:</Text>
+      <View style={styles.card}>
+          {selectedResidence && (
+          <>
+        {laundryData[selectedResidence]?.map((machine) => (
+          <MachineData
+            key={machine.id}
+            name={machine.name}
+            status={machine.status}
+            time={machine.time}
           />
-        </View>
-      )}
-
-      <Text style={styles.machineHeader}>Washing Machines</Text>
-      <FlatList
-        data={machines}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.machineCard}>
-            <Text style={styles.machineName}>{item.name}</Text>
-            <View style={styles.machineStatusBox}>
-              {item.status === "Available" ? (
-                <Text style={[styles.machineStatus, { color: "green" }]}>
-                  Available
-                </Text>
-              ) : (
-                <>
-                  <Text style={[styles.machineStatus, { color: "red" }]}>
-                    In Use
-                  </Text>
-                  <Text style={styles.machineStatus}>{item.time}</Text>
-                </>
-              )}
-            </View>
-          </View>
-        )}
-      />
+        ))}
+      </>
+    )}
+      </View>
     </SafeAreaView>
 
   );
@@ -212,43 +175,7 @@ const styles = StyleSheet.create({
     width: responsiveWidth(8),
     height: responsiveHeight(8),
   },
-  selectionBox: {
-    flexDirection: "row",
-    borderRadius: 10,
-    width: responsiveWidth(75),
-    height: responsiveHeight(6),
-    backgroundColor: "white",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 12,
-  },
-  machineHeader: {
-    marginVertical: 15,
-    fontSize: 25,
-    alignItems: "center",
-    color: "white",
-    justifyContent: "center",
-  },
-  machineCard: {
-    width: responsiveWidth(75),
-    height: responsiveHeight(10),
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "white",
-    borderRadius: 10,
-    marginVertical: 10,
-    backgroundColor: "white",
-  },
-  machineName: {
-    fontSize: 16,
-  },
-  machineStatus: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  machineStatusBox: {
-    justifyContent: "flex-start",
-  },
+  card : {
+    marginVertical: responsiveHeight(3),
+  }
 });
