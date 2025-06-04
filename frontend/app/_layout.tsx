@@ -1,6 +1,9 @@
-import { HeaderShownContext } from "@react-navigation/elements";
+import {AuthProvider} from '../context/AuthContext';
 import { Stack } from "expo-router";
 
+
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false, animation: "none" }} />;
+  return <AuthProvider>
+          <Stack screenOptions={{ headerShown: false, animation: "none" }} />
+        </AuthProvider>
 }

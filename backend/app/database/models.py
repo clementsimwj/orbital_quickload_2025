@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
 from datetime import datetime, timedelta
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from configurations import Base
 
-
-class User(BaseModel):
-    tele_handle: str
-    hashed_password: str
+class Users(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, index=True)

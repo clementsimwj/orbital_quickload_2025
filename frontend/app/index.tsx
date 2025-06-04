@@ -1,13 +1,15 @@
 import {
+  Linking,
   Text,
   View,
   StyleSheet,
   Image,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
+  Button,
+  ActivityIndicator,
+  Alert,
+  FlatList,
 } from "react-native";
 import {
   responsiveHeight,
@@ -15,68 +17,130 @@ import {
 } from "react-native-responsive-dimensions";
 import { RFValue } from "react-native-responsive-fontsize";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import KeyboardAvoidingContatiner from "../components/KeyboardAvoidingContainer";
+import { Redirect } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect, useState } from "react";
+import MachineData from "@/components/MachineData";
+import Dropdown from '../components/Dropdown';
+import axios from "axios";
+
+interface Washer {
+  id: string;
+  name: string;
+  status: string;
+  time?: string;
+}
 
 export default function Index() {
-  const router = useRouter();
+  //Authentication Check:
+  const { token, logout, isAuthenticated, isLoading } = useAuth();
+  const [userData, setUserData] = useState<String>();
+  const [loadingUser, setLoadingUser] = useState(true);
+
+  //Will be taken from database
+  const items = [
+    { id: "1", label: "Ridge View Residential College", value: "rvrc" },
+    { id: "2", label: "Residential College 4", value: "rc4" },
+    { id: "3", label: "Tembusu College", value: "tc" },
+    { id: "4", label: "College of Alice and Peter Tan", value: "capt" },
+    { id: "5", label: "NUSC", value: "nusc" },
+    { id: "6", label: "Acacia College", value: "ac" },
+  ]
+  const laundryData: Record<string, Washer[]> = {
+        rvrc: [
+      { id: "1", name: "RVRC Washer 1", status: "Available", time: "" },
+      { id: "2", name: "RVRC Washer 2", status: "In-Use", time: "10" },
+    ],
+    rc4: [
+      { id: "1", name: "RC4 Washer 1", status: "Available", time:"" },
+      { id: "2", name: "RC4 Washer 2", status: "Available", time:"" },
+    ],
+    tc: [
+      { id: "1", name: "Tembu Washer 1", status: "Available", time:"" },
+      { id: "2", name: "Tembu Washer 2", status: "Available", time:"" },
+    ],
+    capt: [
+      { id: "1", name: "Capt Washer 1", status: "In-Use", time: "20" },
+      { id: "2", name: "Capt Washer 2", status: "Available", time:"" },
+    ],
+    nusc: [
+      { id: "1", name: "NUSC Washer 1", status: "In-Use", time: "15" },
+      { id: "2", name: "NUSC Washer 2", status: "Available", time:"" },
+    ],
+    ac: [
+      { id: "1", name: "Acacia Washer 1", status: "In-Use", time: "30" },
+      { id: "2", name: "Acacia Washer 2", status: "Available", time:"" },
+    ],
+  }
+
+  const [selectedResidence, setSelectedResidence] = useState<string>("");
+
+  const handleSelect = (item: any) => {
+    console.log("Selected: ", item)
+    setSelectedResidence(item.value);
+  };
+
+  useEffect(() => {
+    if(isAuthenticated && token) {
+      axios.get(`http://192.168.50.156:8000/`, {
+        headers : {Authorization : `Bearer ${token}`},
+      })
+      .then((response) => {
+        setUserData(response.data.User.handle);
+        setLoadingUser(false);
+      })
+      .catch((error) => {
+        Alert.alert("Error", error);
+        setLoadingUser(false);
+      });
+    } else {
+      setLoadingUser(false);
+    }
+  }, [isAuthenticated, token]);
+
+  if (isLoading || loadingUser) {
+    return (<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" />
+            </View>)
+  }
+  if (!isAuthenticated) return <Redirect href='/login'/>
+
+  const machines = selectedResidence ? laundryData[selectedResidence] : [];
+
   return (
-    <KeyboardAvoidingContatiner>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.upperWrapper}>
-          <Image
-            style={styles.logo}
-            resizeMode="contain"
-            source={require("../assets/images/logo.png")}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.upperWrapper}>
+        <View style={{flexDirection:'row', alignItems:'center', justifyContent:'center'}}>
+          <TouchableOpacity onPress={logout}>
+            <Image style={styles.logoutImage} resizeMode='contain'source={require("../assets/images/logoutButton.png")}/>
+          </TouchableOpacity>
+          <Text style={styles.title}>Welcome: </Text>
+        </View>
+        {userData ? (<Text style={styles.user}>{userData}</Text>) : (<Text style={styles.user}>Unknown User!</Text>)}
+      </View>
+      <View style={{alignItems: 'flex-start', justifyContent: 'center', marginVertical: responsiveHeight(2)}}>
+          <Text style={{marginBottom: responsiveHeight(1), fontSize: RFValue(15), color: "#c8cac9"}}>Residence:</Text>
+          <Dropdown label="Select your Residences: "
+                    items = {items}
+                    onSelect={handleSelect}/>
+      </View>
+      <Text style={{fontSize: RFValue(15), color: "#c8cac9", fontWeight:'bold'}}>Washing Machine Status:</Text>
+      <View style={styles.card}>
+          {selectedResidence && (
+          <>
+        {laundryData[selectedResidence]?.map((machine) => (
+          <MachineData
+            key={machine.id}
+            name={machine.name}
+            status={machine.status}
+            time={machine.time}
           />
-          <Text style={styles.title}>QuickLoad</Text>
-        </View>
-        <View style={styles.lowerWrapper}>
-          <View>
-            <Text
-              style={{
-                color: "white",
-                marginVertical: responsiveHeight(1),
-                fontSize: RFValue(15),
-              }}
-            >
-              Telegram Handle:
-            </Text>
-            <TextInput
-              style={styles.textBox}
-              placeholder="Do not include '@'"
-            ></TextInput>
-          </View>
-          <View>
-            <Text
-              style={{
-                color: "white",
-                marginVertical: responsiveHeight(1),
-                fontSize: RFValue(15),
-              }}
-            >
-              Password:
-            </Text>
-            <TextInput
-              style={styles.textBox}
-              secureTextEntry={true}
-              placeholder="Enter your password"
-            ></TextInput>
-          </View>
-          <TouchableOpacity
-            style={{ marginVertical: responsiveHeight(2) }}
-            onPress={() => router.push("/register")}
-          >
-            <Text style={{ color: "#EF7C00" }}>
-              Don't have an account? Create one.
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Proceed</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingContatiner>
+        ))}
+      </>
+    )}
+      </View>
+    </SafeAreaView>
+
   );
 }
 
@@ -84,13 +148,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#003D7C",
+    alignItems: "center",
   },
-  upperWrapper: {
+  upperWrapper : {
+    backgroundColor: "#EF7C00",
     paddingVertical: responsiveHeight(5),
-    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#EF7C00",
+    paddingHorizontal: responsiveWidth(12)
   },
   title: {
     fontFamily: "Epilogue-ExtraBold",
@@ -98,33 +163,19 @@ const styles = StyleSheet.create({
     color: "white",
     marginVertical: responsiveWidth(5),
     fontSize: RFValue(40),
+    marginHorizontal: responsiveWidth(10),
   },
-  logo: {
-    width: responsiveWidth(20),
-    height: responsiveHeight(20),
+  user : {
+    color: "#cdf4f8",
+    fontSize : RFValue(20),
+    fontStyle: 'italic'
+
   },
-  lowerWrapper: {
-    marginVertical: responsiveHeight(10),
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: responsiveWidth(5),
+  logoutImage : {
+    width: responsiveWidth(8),
+    height: responsiveHeight(8),
   },
-  textBox: {
-    borderRadius: 10,
-    width: responsiveWidth(75),
-    backgroundColor: "white",
-    marginVertical: responsiveHeight(2),
-  },
-  button: {
-    marginVertical: responsiveHeight(10),
-    borderRadius: 10,
-    backgroundColor: "#EF7C00",
-    paddingVertical: responsiveHeight(2),
-    paddingHorizontal: responsiveWidth(5),
-  },
-  buttonText: {
-    fontFamily: "Epilogue-ExtraBold",
-    fontSize: RFValue(20),
-    color: "white",
-  },
+  card : {
+    marginVertical: responsiveHeight(3),
+  }
 });
