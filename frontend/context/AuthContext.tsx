@@ -47,7 +47,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       params.append("username", username);
       params.append("password", password);
       const response = await axios.post(
-        `http://192.168.50.156:8000/auth/login`,
+        `https://orbital-quickload-2025.onrender.com/auth/login`,
         params.toString(),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
