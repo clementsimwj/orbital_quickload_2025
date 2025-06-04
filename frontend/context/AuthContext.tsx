@@ -47,7 +47,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       params.append("username", username);
       params.append("password", password);
       const response = await axios.post(
-        `http://10.0.2.2:8000/auth/login`,
+        `http://192.168.50.156:8000/auth/login`,
         params.toString(),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
@@ -59,6 +59,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       let message = "Unknown error";
       if (axios.isAxiosError(error)) {
         message = error.response?.data?.detail || error.message;
+        console.log(error)
       } else if (error instanceof Error) {
         message = error.message;
       }

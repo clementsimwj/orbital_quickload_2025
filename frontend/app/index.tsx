@@ -82,7 +82,7 @@ export default function Index() {
 
   useEffect(() => {
     if(isAuthenticated && token) {
-      axios.get(`http://10.0.2.2:8000/`, {
+      axios.get(`http://192.168.50.156:8000/`, {
         headers : {Authorization : `Bearer ${token}`},
       })
       .then((response) => {
