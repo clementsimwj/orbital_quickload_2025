@@ -1,15 +1,19 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Annotated, AsyncGenerator
+from typing import Annotated
 import auth
-from database import models
+from database import schemas
 from sqlalchemy import text
-from configurations import engine, SessionLocal
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from configurations import get_db, create_tables
 from auth import get_current_user
 
-app = FastAPI()
-models.Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await create_tables()
+    yield
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     # Replace with specific domain in production
@@ -31,15 +35,10 @@ async def user(user: user_dependency):
 #Returns 
 #{ "User" : {"user_id": user_id, "user_handle": user_handle}}
 
-async def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
-db_dependency = Annotated[Session, Depends(get_db)]
-@app.get("/users")
-async def get_users(db: db_dependency):
-    result = db.query(models.Users).all()
-    return result
+@app.get("/users", response_model=list[schemas.User])
+async def get_users(db: AsyncSession = Depends(get_db)):
+    query = text("SELECT telegram_id, telegram_handle, session FROM users")
+    result = await db.execute(query)
+    users = result.mappings().all()
+    return users

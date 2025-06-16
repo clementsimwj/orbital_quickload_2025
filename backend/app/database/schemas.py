@@ -1,11 +1,9 @@
-def individual_data(user):
-    return {
-        "id" : str(user["_id"]),
-        "tele_handle" : user["tele_handle"],
-        "code" : user["code"],
-        "authenticated" : user["authenticated"],
-        "created" : user["created"]
-    }
+from pydantic import BaseModel
 
-def all_data(users):
-    return [individual_data(user) for user in users]
+class User(BaseModel):
+    telegram_id: int
+    telegram_handle: str
+    session: str | None = None
+
+    class Config:
+        orm_mode = True
