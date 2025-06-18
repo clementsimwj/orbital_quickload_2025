@@ -4,6 +4,7 @@
     "slug": "QuickLoad",
     "version": "1.0.0",
     "orientation": "portrait",
+    "entryPoint": "expo-router/entry",
     "icon": "./assets/images/icon.png",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
@@ -37,6 +38,7 @@
       "expo-secure-store"
     ],
     "experiments": {
+      "router" : true,
       "typedRoutes": true
     }
   }

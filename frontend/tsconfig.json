@@ -9,6 +9,7 @@
     }
   },
   "include": [
+    "app", "expo-router",
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",

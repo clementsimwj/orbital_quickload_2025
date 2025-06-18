@@ -82,7 +82,7 @@ export default function Index() {
 
   useEffect(() => {
     if(isAuthenticated && token) {
-      axios.get(`https://orbital-quickload-2025.onrender.com/`, {
+      axios.get(`http://10.0.2.2:8000/`, {
         headers : {Authorization : `Bearer ${token}`},
       })
       .then((response) => {
