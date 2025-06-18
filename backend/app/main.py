@@ -36,6 +36,7 @@ async def user(user: user_dependency):
 #{ "User" : {"user_id": user_id, "user_handle": user_handle}}
 
 
+#returns all users in the users table
 @app.get("/users", response_model=list[schemas.User])
 async def get_users(db: AsyncSession = Depends(get_db)):
     query = text("SELECT telegram_id, telegram_handle, session FROM users")

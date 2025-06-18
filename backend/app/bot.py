@@ -21,19 +21,20 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     password = context.args[0]
     user = update.effective_user
     handle = user.username
-    user_id = str(user.id)
+    user_id = user.id
     if not handle:
         await update.message.reply_text("❌ You need a Telegram username set in your profile to register.")
         return
     try:
         res = requests.post(f"{API_URL}/auth/register", json={"user_id" : user_id, "handle" : handle, "password" : password})
+        detail = res.json().get("detail")
         if res.status_code in (200,201):
             await update.message.reply_text("✅ Successfully registered! Now you can login in the app to get Started")
         else:
             print(res.status_code)
             await update.message.reply_text(f"❌ Registration failed: {res.json().get('detail')}")
     except Exception as e:
-        await update.message.reply_text("❌ Failed to contact registration server.")
+        await update.message.reply_text("❌ Failed to contact registration server.{detail}")
         print(e)
 
 async def change_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -51,7 +52,7 @@ async def change_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         res = requests.post(f"{API_URL}/auth/change-password", json={
-            "user_id": str(user_id),
+            "user_id": user_id,
             "handle": handle,
             "new_password": new_password
         })
@@ -68,7 +69,7 @@ async def change_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def update_handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     handle = user.username
-    user_id = str(user.id)
+    user_id = user.id
     try:
         res = requests.post(f"{API_URL}/auth/update", json={"user_id" : user_id, "new_handle": handle})
         if res.status_code in (200,201):
