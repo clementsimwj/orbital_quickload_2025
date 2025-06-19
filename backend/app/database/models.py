@@ -21,14 +21,20 @@ class MachineTypeEnum(str, enum.Enum):
     washer = "washing_machine"
     dryer = "dryer"
 
+class MachineStatusEnum(str, enum.Enum):
+    available = "available"
+    in_use = "in use"
+    complete = "complete"
+
+
 class Machine(Base):
     __tablename__ = "machines"
 
     machine_id = Column(Integer, primary_key=True, index=True)
     machine_type = Column(Enum(MachineTypeEnum), nullable=False)
-    status = Column(Boolean, nullable=False)
+    status = Column(Enum(MachineStatusEnum), nullable=False)
     machine_name = Column(String(255), nullable=False)
-    residence_id = Column(Integer, ForeignKey("residences.residence_id"))
+    residence_id = Column(Integer, ForeignKey("residences.residence_id"), nullable=False)
 
     residence = relationship("Residence", backref="machines")
 

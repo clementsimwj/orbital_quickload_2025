@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   logout: () => {},
   isAuthenticated: false,
-  isLoading: true
+  isLoading: true,
 });
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -51,7 +51,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         params.toString(),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
-      const {access_token} = response.data;
+      const { access_token } = response.data;
       await SecureStore.setItemAsync("access_token", access_token);
       setToken(access_token);
       return true;
@@ -59,7 +59,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       let message = "Unknown error";
       if (axios.isAxiosError(error)) {
         message = error.response?.data?.detail || error.message;
-        console.log(error)
+        console.log(error);
       } else if (error instanceof Error) {
         message = error.message;
       }
@@ -74,9 +74,11 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const isAuthenticated = !!token;
-  console.log('isAuthenticated: ' + isAuthenticated);
+  console.log("isAuthenticated: " + isAuthenticated);
   return (
-    <AuthContext.Provider value={{ token, login, logout, isAuthenticated, isLoading}}>
+    <AuthContext.Provider
+      value={{ token, login, logout, isAuthenticated, isLoading }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -85,7 +87,5 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 const useAuth = () => {
   return useContext(AuthContext);
 };
-
-
 
 export { useAuth, AuthContext, AuthProvider };
