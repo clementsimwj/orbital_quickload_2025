@@ -43,3 +43,14 @@ async def get_users(db: AsyncSession = Depends(get_db)):
     result = await db.execute(query)
     users = result.mappings().all()
     return users
+
+@app.get("/residence_id", response_model=list[schemas.MachineOut])
+async def get_machines(residence_id: int, db: AsyncSession = Depends(get_db)):
+    query = text("""
+        SELECT machines.machine_id, machines.machine_name, machines.status
+        FROM machines
+        WHERE machines.residence_id = :residence_id
+    """)
+    params = {"residence_id": residence_id}
+    result = await db.execute(query, params)
+    return result.all()
