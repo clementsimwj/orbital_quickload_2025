@@ -4,21 +4,21 @@ import { responsiveWidth, responsiveHeight } from "react-native-responsive-dimen
 import { RFValue } from "react-native-responsive-fontsize";
 
 type Props = {
+  key : number;
   name: string;
-  status: string;
-  time?: string;
+  type: string;
+  status: string | null;
 };
 
-const MachineData: React.FC<Props> = ({ name, status, time }) => {
+const MachineData: React.FC<Props> = ({ name, status }) => {
   const availableImage = '../assets/images/availableImage.png';
   const hourglassImage = '../assets/images/hourglass.png';
-  const isInUse = status === "In-Use";
+  const isInUse = status === "in use";
   const iconURL = isInUse ? require(hourglassImage) : require(availableImage);
   return (
     <View style={styles.container}>
       <Text style={styles.name}>{name}</Text>
       <View style={styles.statusContainer}>
-        <Text style={styles.statusText}>{isInUse ? time + " mins" : ""}</Text>
         <Image style={styles.icon} source={iconURL} resizeMode="contain"/>
       </View>
     </View>

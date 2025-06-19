@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  ScrollView,
 } from "react-native";
 import {
   responsiveHeight,
@@ -25,10 +26,10 @@ import Dropdown from '../components/Dropdown';
 import axios from "axios";
 
 interface Washer {
-  id: string;
-  name: string;
-  status: string;
-  time?: string;
+  machine_id: number;
+  machine_type: 'washer' | 'dryer';
+  status: 'available' | 'in use' | 'complete' | null;
+  machine_name: string;
 }
 
 export default function Index() {
@@ -36,44 +37,19 @@ export default function Index() {
   const { token, logout, isAuthenticated, isLoading } = useAuth();
   const [userData, setUserData] = useState<String>();
   const [loadingUser, setLoadingUser] = useState(true);
+  const [machines, setMachines] = useState<Washer[]>([]);
+  const [loadingMachines, setLoadingMachines] = useState(false);
 
-  //Will be taken from database
   const items = [
-    { id: "1", label: "Ridge View Residential College", value: "rvrc" },
-    { id: "2", label: "Residential College 4", value: "rc4" },
-    { id: "3", label: "Tembusu College", value: "tc" },
-    { id: "4", label: "College of Alice and Peter Tan", value: "capt" },
-    { id: "5", label: "NUSC", value: "nusc" },
-    { id: "6", label: "Acacia College", value: "ac" },
-  ]
-  const laundryData: Record<string, Washer[]> = {
-        rvrc: [
-      { id: "1", name: "RVRC Washer 1", status: "Available", time: "" },
-      { id: "2", name: "RVRC Washer 2", status: "In-Use", time: "10" },
-    ],
-    rc4: [
-      { id: "1", name: "RC4 Washer 1", status: "Available", time:"" },
-      { id: "2", name: "RC4 Washer 2", status: "Available", time:"" },
-    ],
-    tc: [
-      { id: "1", name: "Tembu Washer 1", status: "Available", time:"" },
-      { id: "2", name: "Tembu Washer 2", status: "Available", time:"" },
-    ],
-    capt: [
-      { id: "1", name: "Capt Washer 1", status: "In-Use", time: "20" },
-      { id: "2", name: "Capt Washer 2", status: "Available", time:"" },
-    ],
-    nusc: [
-      { id: "1", name: "NUSC Washer 1", status: "In-Use", time: "15" },
-      { id: "2", name: "NUSC Washer 2", status: "Available", time:"" },
-    ],
-    ac: [
-      { id: "1", name: "Acacia Washer 1", status: "In-Use", time: "30" },
-      { id: "2", name: "Acacia Washer 2", status: "Available", time:"" },
-    ],
-  }
+  { value : 0, label: "Ridge View Residential College"},
+  { value : 1, label: "Residential College 4"},
+  { value : 2, label: "Tembusu College"},
+  { value : 3, label: "College of Alice and Peter Tan"},
+  { value : 4, label: "Acacia College"},
+];
 
-  const [selectedResidence, setSelectedResidence] = useState<string>("");
+
+  const [selectedResidence, setSelectedResidence] = useState<number>();
 
   const handleSelect = (item: any) => {
     console.log("Selected: ", item)
@@ -98,6 +74,24 @@ export default function Index() {
     }
   }, [isAuthenticated, token]);
 
+useEffect(() => {
+  if (isAuthenticated && token && selectedResidence != undefined) {
+    setLoadingMachines(true);
+    axios.get(`http://10.0.2.2:8000/${selectedResidence}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((response) => {
+      setMachines(response.data); // List[MachineOut]
+      setLoadingMachines(false);
+    })
+    .catch((error) => {
+      Alert.alert("Error", "Failed to fetch machines.");
+      console.error(error);
+      setLoadingMachines(false);
+    });
+  }
+}, [isAuthenticated, token, selectedResidence]);
+
   if (isLoading || loadingUser) {
     return (<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
               <ActivityIndicator size="large" />
@@ -105,7 +99,7 @@ export default function Index() {
   }
   if (!isAuthenticated) return <Redirect href='/login'/>
 
-  const machines = selectedResidence ? laundryData[selectedResidence] : [];
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -126,18 +120,18 @@ export default function Index() {
       </View>
       <Text style={{fontSize: RFValue(15), color: "#c8cac9", fontWeight:'bold'}}>Washing Machine Status:</Text>
       <View style={styles.card}>
-          {selectedResidence && (
+          {(selectedResidence !== undefined) && !loadingMachines && (
           <>
-        {laundryData[selectedResidence]?.map((machine) => (
-          <MachineData
-            key={machine.id}
-            name={machine.name}
-            status={machine.status}
-            time={machine.time}
-          />
-        ))}
-      </>
-    )}
+          {machines.map((machine) => (
+            <MachineData
+              key = {machine.machine_id}
+              type = {machine.machine_type}
+              name={machine.machine_name}
+              status={machine.status}
+            />
+          ))}
+          </>
+        )}
       </View>
     </SafeAreaView>
 
