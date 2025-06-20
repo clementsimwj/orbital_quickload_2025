@@ -48,11 +48,14 @@ const SetTimer: React.FC<SetTimer> = ({
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity onPress={() => {
-            console.log("Start button pressed with time: ", time);
-            onStart(time);
-            onClose();
-          }} style={styles.startButton}>
+          <TouchableOpacity
+            onPress={() => {
+              console.log("Start button pressed with time: ", time);
+              onStart(time);
+              onClose();
+            }}
+            style={styles.startButton}
+          >
             <Text style={{ color: "white", fontSize: 18 }}>Start</Text>
           </TouchableOpacity>
         </View>

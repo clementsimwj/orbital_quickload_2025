@@ -8,6 +8,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from configurations import get_db, create_tables
 from auth import get_current_user
+from datetime import datetime, timedelta, timezone
+import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -68,3 +70,40 @@ async def get_machines_by_residence(residence_id: int,
 #    status: Optional[MachineStatusEnum]
 #    machine_name: str
 
+    
+
+
+#timer logic
+@app.post("/timer")
+async def setTimer(timer_data: schemas.timerDataCreate, 
+                   user : user_dependency,
+                   db: AsyncSession = Depends(get_db)):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail='Authentication Failed')
+    time_end = datetime.now(timezone(timedelta(hours=8))) + timedelta(minutes = timer_data.time)
+    time_start = datetime.now(timezone(timedelta(hours=8)))
+    query = text("""INSERT INTO notifications (time_start, time_end, machine_id, telegram_id)
+                    VALUES (:time_start, :time_end, :machine_id, :telegram_id)""")
+    params = {"time_start": time_start.replace(tzinfo=None), 
+              "time_end": time_end.replace(tzinfo=None), 
+              "machine_id": timer_data.machine_id,
+              "telegram_id": user["user_id"]}
+    query2 = text("""UPDATE machines
+                     SET status = 'in use'
+                     WHERE machine_id = :machine_id""")
+    await db.execute(query, params)
+    await db.execute(query2, { "machine_id" : timer_data.machine_id,})
+    await db.commit()
+    delay_minutes = timer_data.time
+    asyncio.create_task(machine_complete_updater(timer_data.machine_id, delay_minutes, db))
+    return {"message" : "Timer has been set successfully"}
+
+
+##this sets the status of machine to complete once the time is up
+##unfortunately this will fail if the server crashes or restarts
+async def machine_complete_updater(machine_id: int, delay_minutes: int, db: AsyncSession):
+    await asyncio.sleep(delay_minutes * 60)
+    query = text("UPDATE machines SET status = 'complete' WHERE machine_id = :machine_id")
+    await db.execute(query, {"machine_id": machine_id})
+    await db.commit()

@@ -27,3 +27,8 @@ class MachineOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class timerDataCreate(BaseModel):
+    machine_id : int
+    time: int
+

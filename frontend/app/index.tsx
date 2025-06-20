@@ -22,14 +22,14 @@ import { Redirect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import MachineData from "@/components/MachineData";
-import Dropdown from '../components/Dropdown';
+import Dropdown from "../components/Dropdown";
 import axios from "axios";
 import SetTimer from "@/components/SetTimer";
 
 interface Washer {
   machine_id: number;
-  machine_type: 'washer' | 'dryer';
-  status: 'available' | 'in use' | 'complete' | null;
+  machine_type: "washer" | "dryer";
+  status: "available" | "in use" | "complete" | null;
   machine_name: string;
 }
 
@@ -42,26 +42,31 @@ export default function Index() {
   const [loadingMachines, setLoadingMachines] = useState(false);
 
   const items = [
-  { value : 0, label: "Ridge View Residential College"},
-  { value : 1, label: "Residential College 4"},
-  { value : 2, label: "Tembusu College"},
-  { value : 3, label: "College of Alice and Peter Tan"},
-  { value : 4, label: "Acacia College"},
-];
-
+    { value: 0, label: "Ridge View Residential College" },
+    { value: 1, label: "Residential College 4" },
+    { value: 2, label: "Tembusu College" },
+    { value: 3, label: "College of Alice and Peter Tan" },
+    { value: 4, label: "Acacia College" },
+  ];
 
   const [selectedResidence, setSelectedResidence] = useState<number>();
-  const [selectedMachineId, setSelectedMachineId] = useState<number|null>(null);
-  const [selectedMachineName, setSelectedMachineName] = useState<string>('');
+  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
+    null
+  );
+  const [selectedMachineName, setSelectedMachineName] = useState<string>("");
 
   //Handle select residence from dropdown menu
   const handleSelect = (item: any) => {
-    console.log("Selected: ", item)
+    console.log("Selected: ", item);
     setSelectedResidence(item.value);
   };
 
   //Handle selecting available machines
-  const handlePress = (machine_id: number, machine_name: string, status: string | null) => {
+  const handlePress = (
+    machine_id: number,
+    machine_name: string,
+    status: string | null
+  ) => {
     if (status === "available") {
       setSelectedMachineId(machine_id);
       setSelectedMachineName(machine_name);
@@ -70,108 +75,166 @@ export default function Index() {
 
   //Handle Starting Machine Logic here
   const handleStart = (duration: number) => {
-    console.log(`Starting machine_id: ${selectedMachineId} (${selectedMachineName}) for ${duration} mins`);
+    console.log(
+      `Starting machine_id: ${selectedMachineId} (${selectedMachineName}) for ${duration} mins`
+    );
     //Add API call here
-    console.log("Hi! Sending request to Backend")
-    setSelectedMachineId(null); // Hide timer modal
+    axios
+      .post(
+        `http://10.0.2.2:8000/timer`,
+        {
+          machine_id: selectedMachineId,
+          time: duration,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then((message) => console.log(message))
+      .catch((error) => Alert.alert("Error", error));
+    console.log("Hi! Sending request to Backend");
   };
 
   useEffect(() => {
-    if(isAuthenticated && token) {
-      axios.get(`http://10.0.2.2:8000/`, {
-        headers : {Authorization : `Bearer ${token}`},
-      })
-      .then((response) => {
-        setUserData(response.data.User.handle);
-        setLoadingUser(false);
-      })
-      .catch((error) => {
-        Alert.alert("Error", error);
-        setLoadingUser(false);
-      });
+    if (isAuthenticated && token) {
+      axios
+        .get(`http://10.0.2.2:8000/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          setUserData(response.data.User.handle);
+          setLoadingUser(false);
+        })
+        .catch((error) => {
+          Alert.alert("Error", error);
+          setLoadingUser(false);
+        });
     } else {
       setLoadingUser(false);
     }
   }, [isAuthenticated, token]);
 
-useEffect(() => {
-  if (isAuthenticated && token && selectedResidence != undefined) {
-    setLoadingMachines(true);
-    axios.get(`http://10.0.2.2:8000/${selectedResidence}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((response) => {
-      setMachines(response.data); // List[MachineOut]
-      setLoadingMachines(false);
-    })
-    .catch((error) => {
-      Alert.alert("Error", "Failed to fetch machines.");
-      console.error(error);
-      setLoadingMachines(false);
-    });
-  }
-}, [isAuthenticated, token, selectedResidence]);
+  useEffect(() => {
+    if (isAuthenticated && token && selectedResidence != undefined) {
+      setLoadingMachines(true);
+      axios
+        .get(`http://10.0.2.2:8000/${selectedResidence}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          setMachines(response.data); // List[MachineOut]
+          setLoadingMachines(false);
+        })
+        .catch((error) => {
+          Alert.alert("Error", "Failed to fetch machines.");
+          console.error(error);
+          setLoadingMachines(false);
+        });
+    }
+  }, [isAuthenticated, token, selectedResidence]);
 
   if (isLoading || loadingUser) {
-    return (<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <ActivityIndicator size="large" />
-            </View>)
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
-  if (!isAuthenticated) return <Redirect href='/login'/>
-
-
+  if (!isAuthenticated) return <Redirect href="/login" />;
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.upperWrapper}>
-        <View style={{flexDirection:'row', alignItems:'center', justifyContent:'center'}}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <TouchableOpacity onPress={logout}>
-            <Image style={styles.logoutImage} resizeMode='contain'source={require("../assets/images/logoutButton.png")}/>
+            <Image
+              style={styles.logoutImage}
+              resizeMode="contain"
+              source={require("../assets/images/logoutButton.png")}
+            />
           </TouchableOpacity>
           <Text style={styles.title}>Welcome: </Text>
         </View>
-        {userData ? (<Text style={styles.user}>{userData}</Text>) : (<Text style={styles.user}>Unknown User!</Text>)}
+        {userData ? (
+          <Text style={styles.user}>{userData}</Text>
+        ) : (
+          <Text style={styles.user}>Unknown User!</Text>
+        )}
       </View>
-      <View style={{alignItems: 'flex-start', justifyContent: 'center', marginVertical: responsiveHeight(2)}}>
-          <Text style={{marginBottom: responsiveHeight(1), fontSize: RFValue(15), color: "#c8cac9"}}>Residence:</Text>
-          <Dropdown label="Select your Residences: "
-                    items = {items}
-                    onSelect={handleSelect}/>
+      <View
+        style={{
+          alignItems: "flex-start",
+          justifyContent: "center",
+          marginVertical: responsiveHeight(2),
+        }}
+      >
+        <Text
+          style={{
+            marginBottom: responsiveHeight(1),
+            fontSize: RFValue(15),
+            color: "#c8cac9",
+          }}
+        >
+          Residence:
+        </Text>
+        <Dropdown
+          label="Select your Residences: "
+          items={items}
+          onSelect={handleSelect}
+        />
       </View>
-      <Text style={{fontSize: RFValue(15), color: "#c8cac9", fontWeight:'bold'}}>Washing Machine Status:</Text>
-      <ScrollView style={styles.card}
-        decelerationRate = "normal"
+      <Text
+        style={{ fontSize: RFValue(15), color: "#c8cac9", fontWeight: "bold" }}
+      >
+        Washing Machine Status:
+      </Text>
+      <ScrollView
+        style={styles.card}
+        decelerationRate="normal"
         contentContainerStyle={{
           padding: 16,
           paddingBottom: 100,
-          gap: 12,}}
-        showsVerticalScrollIndicator={false}>
-          {(selectedResidence !== undefined) && !loadingMachines && (
+          gap: 12,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {selectedResidence !== undefined && !loadingMachines && (
           <>
-          {machines.map((machine) => (
-            <MachineData
-              key = {machine.machine_id}
-              type = {machine.machine_type}
-              name={machine.machine_name}
-              status={machine.status}
-              onPress={() => handlePress(machine.machine_id, machine.machine_name, machine.status)}
-              isSelected={selectedMachineId === machine.machine_id}
-            />
-          ))}
+            {machines.map((machine) => (
+              <MachineData
+                key={machine.machine_id}
+                type={machine.machine_type}
+                name={machine.machine_name}
+                status={machine.status}
+                onPress={() =>
+                  handlePress(
+                    machine.machine_id,
+                    machine.machine_name,
+                    machine.status
+                  )
+                }
+                isSelected={selectedMachineId === machine.machine_id}
+              />
+            ))}
           </>
-          )}
-          {selectedMachineId !== null && (
-            <SetTimer
-              visible ={true}
-              selectedMachineId={selectedMachineId}
-              selectedMachineName={selectedMachineName}
-              onStart={handleStart}
-              onClose={()=> setSelectedMachineId(null)}
-            />
-          )}
+        )}
+        {selectedMachineId !== null && (
+          <SetTimer
+            visible={true}
+            selectedMachineId={selectedMachineId}
+            selectedMachineName={selectedMachineName}
+            onStart={handleStart}
+            onClose={() => setSelectedMachineId(null)}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
-
   );
 }
 
@@ -181,12 +244,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#003D7C",
     alignItems: "center",
   },
-  upperWrapper : {
+  upperWrapper: {
     backgroundColor: "#EF7C00",
     paddingVertical: responsiveHeight(5),
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: responsiveWidth(12)
+    paddingHorizontal: responsiveWidth(12),
   },
   title: {
     fontFamily: "Epilogue-ExtraBold",
@@ -196,17 +259,16 @@ const styles = StyleSheet.create({
     fontSize: RFValue(40),
     marginHorizontal: responsiveWidth(10),
   },
-  user : {
+  user: {
     color: "#cdf4f8",
-    fontSize : RFValue(20),
-    fontStyle: 'italic'
-
+    fontSize: RFValue(20),
+    fontStyle: "italic",
   },
-  logoutImage : {
+  logoutImage: {
     width: responsiveWidth(8),
     height: responsiveHeight(8),
   },
-  card : {
+  card: {
     marginVertical: responsiveHeight(3),
-  }
+  },
 });
