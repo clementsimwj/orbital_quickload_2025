@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import MachineData from "@/components/MachineData";
 import Dropdown from '../components/Dropdown';
 import axios from "axios";
+import SetTimer from "@/components/SetTimer";
 
 interface Washer {
   machine_id: number;
@@ -50,10 +51,29 @@ export default function Index() {
 
 
   const [selectedResidence, setSelectedResidence] = useState<number>();
+  const [selectedMachineId, setSelectedMachineId] = useState<number|null>(null);
+  const [selectedMachineName, setSelectedMachineName] = useState<string>('');
 
+  //Handle select residence from dropdown menu
   const handleSelect = (item: any) => {
     console.log("Selected: ", item)
     setSelectedResidence(item.value);
+  };
+
+  //Handle selecting available machines
+  const handlePress = (machine_id: number, machine_name: string, status: string | null) => {
+    if (status === "available") {
+      setSelectedMachineId(machine_id);
+      setSelectedMachineName(machine_name);
+    }
+  };
+
+  //Handle Starting Machine Logic here
+  const handleStart = (duration: number) => {
+    console.log(`Starting machine_id: ${selectedMachineId} (${selectedMachineName}) for ${duration} mins`);
+    //Add API call here
+    console.log("Hi! Sending request to Backend")
+    setSelectedMachineId(null); // Hide timer modal
   };
 
   useEffect(() => {
@@ -134,10 +154,21 @@ useEffect(() => {
               type = {machine.machine_type}
               name={machine.machine_name}
               status={machine.status}
+              onPress={() => handlePress(machine.machine_id, machine.machine_name, machine.status)}
+              isSelected={selectedMachineId === machine.machine_id}
             />
           ))}
           </>
-        )}
+          )}
+          {selectedMachineId !== null && (
+            <SetTimer
+              visible ={true}
+              selectedMachineId={selectedMachineId}
+              selectedMachineName={selectedMachineName}
+              onStart={handleStart}
+              onClose={()=> setSelectedMachineId(null)}
+            />
+          )}
       </ScrollView>
     </SafeAreaView>
 

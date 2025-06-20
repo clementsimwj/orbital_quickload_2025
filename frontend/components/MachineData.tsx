@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { responsiveWidth, responsiveHeight } from "react-native-responsive-dimensions";
 import { RFValue } from "react-native-responsive-fontsize";
 
@@ -8,20 +8,32 @@ type Props = {
   name: string;
   type: string;
   status: string | null;
+  onPress?: () => void;
+  isSelected?: boolean;
+  children?: React.ReactNode;
 };
 
-const MachineData: React.FC<Props> = ({ name, status }) => {
+const MachineData: React.FC<Props> = ({ name, status, type, onPress, isSelected, children }) => {
   const availableImage = '../assets/images/availableImage.png';
   const hourglassImage = '../assets/images/hourglass.png';
-  const isInUse = status === "in use";
-  const iconURL = isInUse ? require(hourglassImage) : require(availableImage);
+  const isAvailable = status === "available";
+  const iconURL = isAvailable ? require(availableImage) : require(hourglassImage);
+
   return (
-    <View style={styles.container}>
+    <TouchableOpacity
+      onPress={isAvailable ? onPress : undefined}
+      disabled={!isAvailable}
+      style={[
+        styles.container,
+        { opacity: isAvailable ? 1 : 0.5 },
+      ]}
+    >
       <Text style={styles.name}>{name}</Text>
       <View style={styles.statusContainer}>
-        <Image style={styles.icon} source={iconURL} resizeMode="contain"/>
+        <Image style={styles.icon} source={iconURL} resizeMode="contain" />
       </View>
-    </View>
+      {isSelected && children}
+    </TouchableOpacity>
   );
 };
 
