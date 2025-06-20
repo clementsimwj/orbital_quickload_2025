@@ -54,7 +54,9 @@ async def get_machines_by_residence(residence_id: int,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
     query = text("""SELECT machine_id, machine_type, status, machine_name 
-                FROM machines WHERE residence_id = :residence_id""")
+                FROM machines 
+                WHERE residence_id = :residence_id
+                ORDER BY machine_name""")
     result = await db.execute(query, {"residence_id": residence_id})
     print(result)
     machines = result.mappings().all()
