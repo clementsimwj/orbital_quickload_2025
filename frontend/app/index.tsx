@@ -23,6 +23,7 @@ import { useEffect, useState } from "react";
 import MachineData from "@/components/MachineData";
 import Dropdown from "../components/Dropdown";
 import axios from "axios";
+import SetTimer from "../components/SetTimer";
 
 interface Washer {
   id: string;
@@ -36,6 +37,9 @@ export default function Index() {
   const { token, logout, isAuthenticated, isLoading } = useAuth();
   const [userData, setUserData] = useState<String>();
   const [loadingUser, setLoadingUser] = useState(true);
+  const [timerVisible, setTimerVisible] = useState(false);
+  const [selectedMachineId, setSelectedMachineId] = useState<number>(0);
+  const [selectedMachineName, setSelectedMachineName] = useState("");
 
   //Will be taken from database
   const items = [
@@ -52,24 +56,24 @@ export default function Index() {
       { id: "2", name: "RVRC Washer 2", status: "In-Use", time: "10" },
     ],
     rc4: [
-      { id: "1", name: "RC4 Washer 1", status: "Available", time: "" },
-      { id: "2", name: "RC4 Washer 2", status: "Available", time: "" },
+      { id: "3", name: "RC4 Washer 1", status: "Available", time: "" },
+      { id: "4", name: "RC4 Washer 2", status: "Available", time: "" },
     ],
     tc: [
-      { id: "1", name: "Tembu Washer 1", status: "Available", time: "" },
-      { id: "2", name: "Tembu Washer 2", status: "Available", time: "" },
+      { id: "5", name: "Tembu Washer 1", status: "Available", time: "" },
+      { id: "6", name: "Tembu Washer 2", status: "Available", time: "" },
     ],
     capt: [
-      { id: "1", name: "Capt Washer 1", status: "In-Use", time: "20" },
-      { id: "2", name: "Capt Washer 2", status: "Available", time: "" },
+      { id: "7", name: "Capt Washer 1", status: "In-Use", time: "20" },
+      { id: "8", name: "Capt Washer 2", status: "Available", time: "" },
     ],
     nusc: [
-      { id: "1", name: "NUSC Washer 1", status: "In-Use", time: "15" },
-      { id: "2", name: "NUSC Washer 2", status: "Available", time: "" },
+      { id: "9", name: "NUSC Washer 1", status: "In-Use", time: "15" },
+      { id: "10", name: "NUSC Washer 2", status: "Available", time: "" },
     ],
     ac: [
-      { id: "1", name: "Acacia Washer 1", status: "In-Use", time: "30" },
-      { id: "2", name: "Acacia Washer 2", status: "Available", time: "" },
+      { id: "11", name: "Acacia Washer 1", status: "In-Use", time: "30" },
+      { id: "12", name: "Acacia Washer 2", status: "Available", time: "" },
     ],
   };
 
@@ -79,6 +83,8 @@ export default function Index() {
     console.log("Selected: ", item);
     setSelectedResidence(item.value);
   };
+
+  const handleStart = () => {};
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -109,6 +115,12 @@ export default function Index() {
   if (!isAuthenticated) return <Redirect href="/login" />;
 
   const machines = selectedResidence ? laundryData[selectedResidence] : [];
+
+  const handlePress = (machine_id: number, machine_name: string) => {
+    setSelectedMachineId(machine_id);
+    setSelectedMachineName(machine_name);
+    setTimerVisible(true);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -168,14 +180,23 @@ export default function Index() {
             {laundryData[selectedResidence]?.map((machine) => (
               <MachineData
                 key={machine.id}
+                id={machine.id}
                 name={machine.name}
                 status={machine.status}
                 time={machine.time}
+                handlePress={handlePress}
               />
             ))}
           </>
         )}
       </View>
+      <SetTimer
+        visible={timerVisible}
+        selectedMachineId={selectedMachineId}
+        selectedMachineName={selectedMachineName}
+        onClose={() => setTimerVisible(false)}
+        onStart={handleStart}
+      />
     </SafeAreaView>
   );
 }

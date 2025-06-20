@@ -1,27 +1,41 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
-import { responsiveWidth, responsiveHeight } from "react-native-responsive-dimensions";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import {
+  responsiveWidth,
+  responsiveHeight,
+} from "react-native-responsive-dimensions";
 import { RFValue } from "react-native-responsive-fontsize";
 
 type Props = {
+  id: string;
   name: string;
   status: string;
   time?: string;
+  handlePress: (machine_id: number, machine_name: string) => void;
 };
 
-const MachineData: React.FC<Props> = ({ name, status, time }) => {
-  const availableImage = '../assets/images/availableImage.png';
-  const hourglassImage = '../assets/images/hourglass.png';
+const MachineData: React.FC<Props> = ({
+  id,
+  name,
+  status,
+  time,
+  handlePress,
+}) => {
+  const availableImage = "../assets/images/availableImage.png";
+  const hourglassImage = "../assets/images/hourglass.png";
   const isInUse = status === "In-Use";
   const iconURL = isInUse ? require(hourglassImage) : require(availableImage);
   return (
-    <View style={styles.container}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => handlePress(Number(id), String(name))}
+    >
       <Text style={styles.name}>{name}</Text>
       <View style={styles.statusContainer}>
         <Text style={styles.statusText}>{isInUse ? time + " mins" : ""}</Text>
-        <Image style={styles.icon} source={iconURL} resizeMode="contain"/>
+        <Image style={styles.icon} source={iconURL} resizeMode="contain" />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -37,28 +51,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: responsiveWidth(2),
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 10,
-    marginBottom: responsiveHeight(2)
+    marginBottom: responsiveHeight(2),
   },
   name: {
     fontWeight: "bold",
-    fontSize: RFValue(16)
+    fontSize: RFValue(16),
   },
   status: {
     fontWeight: "500",
     fontSize: 14,
   },
-  statusContainer : {
-    flexDirection: 'row',
-    alignItems: 'center'
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  icon : {
+  icon: {
     width: responsiveWidth(8),
-    height: responsiveHeight(8)
+    height: responsiveHeight(8),
   },
-  statusText : {
-    fontWeight: '600',
-    fontStyle: 'italic'
-  }
+  statusText: {
+    fontWeight: "600",
+    fontStyle: "italic",
+  },
 });
