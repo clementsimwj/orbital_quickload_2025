@@ -11,7 +11,11 @@ type Props = {
   name: string;
   status: string;
   time?: string;
-  handlePress: (machine_id: number, machine_name: string) => void;
+  handlePress: (
+    machine_id: number,
+    machine_name: string,
+    status: string
+  ) => void;
 };
 
 const MachineData: React.FC<Props> = ({
@@ -28,7 +32,7 @@ const MachineData: React.FC<Props> = ({
   return (
     <TouchableOpacity
       style={styles.container}
-      onPress={() => handlePress(Number(id), String(name))}
+      onPress={() => handlePress(Number(id), String(name), status)}
     >
       <Text style={styles.name}>{name}</Text>
       <View style={styles.statusContainer}>

@@ -116,10 +116,16 @@ export default function Index() {
 
   const machines = selectedResidence ? laundryData[selectedResidence] : [];
 
-  const handlePress = (machine_id: number, machine_name: string) => {
-    setSelectedMachineId(machine_id);
-    setSelectedMachineName(machine_name);
-    setTimerVisible(true);
+  const handlePress = (
+    machine_id: number,
+    machine_name: string,
+    status: string
+  ) => {
+    if (status == "available") {
+      setSelectedMachineId(machine_id);
+      setSelectedMachineName(machine_name);
+      setTimerVisible(true);
+    }
   };
 
   return (
