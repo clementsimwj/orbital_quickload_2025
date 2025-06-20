@@ -119,7 +119,13 @@ useEffect(() => {
                     onSelect={handleSelect}/>
       </View>
       <Text style={{fontSize: RFValue(15), color: "#c8cac9", fontWeight:'bold'}}>Washing Machine Status:</Text>
-      <View style={styles.card}>
+      <ScrollView style={styles.card}
+        decelerationRate = "normal"
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: 100,
+          gap: 12,}}
+        showsVerticalScrollIndicator={false}>
           {(selectedResidence !== undefined) && !loadingMachines && (
           <>
           {machines.map((machine) => (
@@ -132,7 +138,7 @@ useEffect(() => {
           ))}
           </>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
 
   );
