@@ -1,4 +1,7 @@
+import asyncio
+import httpx
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated, List
@@ -8,6 +11,12 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from configurations import get_db, create_tables
 from auth import get_current_user
+import os
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -66,3 +75,65 @@ async def get_machines_by_residence(residence_id: int,
 #    status: Optional[MachineStatusEnum]
 #    machine_name: str
 
+@app.post("/{machine_id}")
+async def start_machine(machine_id: int,
+                        body: schemas.TimerStart,
+                        user: user_dependency,
+                        db: AsyncSession = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail='Authentication Failed')
+    
+    time_start = datetime.now(timezone(timedelta(hours=8)))
+    time_end = time_start + timedelta(minutes=body.duration)
+    query = text("""
+        INSERT INTO notifications (time_start, time_end, machine_id, telegram_id)
+        VALUES (:time_start, :time_end, :machine_id, :telegram_id)
+    """)
+    params = {
+        "time_start": time_start.replace(tzinfo=None),
+        "time_end": time_end.replace(tzinfo=None),
+        "machine_id": machine_id,
+        "telegram_id": user["user_id"]
+    }
+    query2 = text("""UPDATE machines
+                     SET status = 'in use'
+                     WHERE machine_id = :machine_id""")
+    await db.execute(query, params)
+    await db.execute(query2, {"machine_id" : machine_id})
+    await db.commit()
+
+    #Background task
+    asyncio.create_task(machine_complete_updater(machine_id, body.duration, db))
+    return {"message" : "Timer has been set successfully"}
+
+
+
+async def machine_complete_updater(machine_id: int, delay_minutes: int, db: AsyncSession):
+    await asyncio.sleep(delay_minutes)
+    query = text("UPDATE machines SET status = 'complete' WHERE machine_id = :machine_id")
+    await db.execute(query, {"machine_id": machine_id})
+    await db.commit()
+
+    result = await db.execute(
+        text("SELECT telegram_id FROM notifications WHERE machine_id = :machine_id"),
+        {"machine_id": machine_id}
+    )
+    row = result.fetchone()
+    if row:
+        chat_id = row.telegram_id
+        await send_telegram_message(chat_id, f"✅ Your laundry on machine {machine_id} is complete!")
+
+    # Clean up notification
+    await db.execute(text("DELETE FROM notifications WHERE machine_id = :machine_id"), {"machine_id": machine_id})
+    await db.commit()
+
+
+async def send_telegram_message(chat_id: str, message: str):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": message
+    }
+    async with httpx.AsyncClient() as client:
+        await client.post(url, data=payload)

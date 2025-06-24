@@ -16,16 +16,18 @@ type Props = {
 const MachineData: React.FC<Props> = ({ name, status, type, onPress, isSelected, children }) => {
   const availableImage = '../assets/images/availableImage.png';
   const hourglassImage = '../assets/images/hourglass.png';
+  const collectImage = '../assets/images/collect.png';
   const isAvailable = status === "available";
-  const iconURL = isAvailable ? require(availableImage) : require(hourglassImage);
+  const isDone = status === "complete";
+  const iconURL = isAvailable ? require(availableImage) : isDone ? require(collectImage) : require(hourglassImage);
 
   return (
     <TouchableOpacity
-      onPress={isAvailable ? onPress : undefined}
-      disabled={!isAvailable}
+      onPress={isAvailable || isDone ? onPress : undefined}
+      disabled={!(isAvailable || isDone)}
       style={[
         styles.container,
-        { opacity: isAvailable ? 1 : 0.5 },
+        { opacity: isAvailable || isDone ? 1 : 0.5 },
       ]}
     >
       <Text style={styles.name}>{name}</Text>

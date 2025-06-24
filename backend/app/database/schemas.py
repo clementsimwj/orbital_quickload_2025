@@ -27,3 +27,6 @@ class MachineOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class TimerStart(BaseModel):
+    duration: int #in minutes

@@ -72,7 +72,12 @@ export default function Index() {
   const handleStart = (duration: number) => {
     console.log(`Starting machine_id: ${selectedMachineId} (${selectedMachineName}) for ${duration} mins`);
     //Add API call here
-    console.log("Hi! Sending request to Backend")
+    axios.post(`http://10.0.2.2:8000/${selectedMachineId}`, {
+      duration: 45
+    }, {
+      headers: {Authorization: `Bearer ${token}`}
+    }).then((message) => console.log(message))
+      .catch((error) => Alert.alert("Error", error));
     setSelectedMachineId(null); // Hide timer modal
   };
 
@@ -95,21 +100,41 @@ export default function Index() {
   }, [isAuthenticated, token]);
 
 useEffect(() => {
-  if (isAuthenticated && token && selectedResidence != undefined) {
-    setLoadingMachines(true);
-    axios.get(`http://10.0.2.2:8000/${selectedResidence}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((response) => {
-      setMachines(response.data); // List[MachineOut]
-      setLoadingMachines(false);
-    })
-    .catch((error) => {
-      Alert.alert("Error", "Failed to fetch machines.");
-      console.error(error);
-      setLoadingMachines(false);
-    });
-  }
+  let intervalId: NodeJS.Timeout;
+  const fetchMachines = () => {
+    console.log("Fetching Machines...")
+    if (isAuthenticated && token && selectedResidence !== undefined) {
+      setLoadingMachines(true);
+      axios.get(`http://10.0.2.2:8000/${selectedResidence}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        const newData = response.data;
+        const dataChanged =
+          machines.length !== newData.length ||
+          machines.some((oldMachine, index) => {
+            const newMachine = newData[index];
+            return (
+              oldMachine.machine_id !== newMachine.machine_id ||
+              oldMachine.status !== newMachine.status
+            );
+          });
+
+        if (dataChanged) {
+          setMachines(newData);
+        }
+        setLoadingMachines(false);
+      })
+      .catch((error) => {
+        Alert.alert("Error", "Failed to fetch machines.");
+        console.error(error);
+        setLoadingMachines(false);
+      });
+    }
+  };
+  fetchMachines();
+  intervalId = setInterval(fetchMachines, 5000);
+  return () => clearInterval(intervalId);
 }, [isAuthenticated, token, selectedResidence]);
 
   if (isLoading || loadingUser) {
@@ -139,37 +164,45 @@ useEffect(() => {
                     onSelect={handleSelect}/>
       </View>
       <Text style={{fontSize: RFValue(15), color: "#c8cac9", fontWeight:'bold'}}>Washing Machine Status:</Text>
-      <ScrollView style={styles.card}
-        decelerationRate = "normal"
-        contentContainerStyle={{
-          padding: 16,
-          paddingBottom: 100,
-          gap: 12,}}
-        showsVerticalScrollIndicator={false}>
-          {(selectedResidence !== undefined) && !loadingMachines && (
-          <>
-          {machines.map((machine) => (
-            <MachineData
-              key = {machine.machine_id}
-              type = {machine.machine_type}
-              name={machine.machine_name}
-              status={machine.status}
-              onPress={() => handlePress(machine.machine_id, machine.machine_name, machine.status)}
-              isSelected={selectedMachineId === machine.machine_id}
-            />
-          ))}
-          </>
-          )}
-          {selectedMachineId !== null && (
-            <SetTimer
-              visible ={true}
-              selectedMachineId={selectedMachineId}
-              selectedMachineName={selectedMachineName}
-              onStart={handleStart}
-              onClose={()=> setSelectedMachineId(null)}
-            />
-          )}
-      </ScrollView>
+{selectedResidence !== undefined && !loadingMachines && (
+  <FlatList
+    data={machines}
+    keyExtractor={(item) => item.machine_id.toString()}
+    renderItem={({ item }) => (
+      <MachineData
+        key={item.machine_id}
+        type={item.machine_type}
+        name={item.machine_name}
+        status={item.status}
+        onPress={() => handlePress(item.machine_id, item.machine_name, item.status)}
+        isSelected={selectedMachineId === item.machine_id}
+      />
+    )}
+    contentContainerStyle={{
+      padding: 16,
+      paddingBottom: 100,
+    }}
+    showsVerticalScrollIndicator={false}
+    // ✅ Optional if items might be added/removed and you want scroll to stick
+    maintainVisibleContentPosition={{
+      minIndexForVisible: 0,
+    }}
+    // ✅ Add space between items
+    ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+    // ✅ Show the timer modal after the list
+    ListFooterComponent={
+      selectedMachineId !== null ? (
+        <SetTimer
+          visible={true}
+          selectedMachineId={selectedMachineId}
+          selectedMachineName={selectedMachineName}
+          onStart={handleStart}
+          onClose={() => setSelectedMachineId(null)}
+        />
+      ) : null
+    }
+  />
+)}
     </SafeAreaView>
 
   );
