@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 
 class User(BaseModel):
@@ -24,9 +24,15 @@ class MachineOut(BaseModel):
     machine_type: MachineTypeEnum
     status: Optional[MachineStatusEnum]
     machine_name: str
+    user_id : Optional[int]
 
     class Config:
         orm_mode = True
 
 class TimerStart(BaseModel):
     duration: int #in minutes
+
+
+class MachinesByResidenceOut(BaseModel):
+    user_id : int 
+    machines: List[MachineOut]

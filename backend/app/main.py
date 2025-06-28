@@ -53,9 +53,8 @@ async def user(user: user_dependency):
 #Returns 
 #{ "User" : {"user_id": user_id, "user_handle": user_handle}}
 
-
 #/{residence_id} to return all the machines that corresponds to the residence
-@app.get("/{residence_id}", response_model=List[schemas.MachineOut])
+@app.get("/{residence_id}", response_model=schemas.MachinesByResidenceOut)
 async def get_machines_by_residence(residence_id: int,
                                     user: user_dependency,
                                     db: AsyncSession = Depends(get_db)):
@@ -67,15 +66,29 @@ async def get_machines_by_residence(residence_id: int,
                 WHERE residence_id = :residence_id
                 ORDER BY machine_name""")
     result = await db.execute(query, {"residence_id": residence_id})
-    print(result)
-    machines = result.mappings().all()
-    return machines
+    machines = [dict(m) for m in result.mappings().all()]
+
+    for machine in machines:
+        if machine['status'] == "complete":
+            notif_query = text("""SELECT telegram_id from notifications WHERE machine_id = :machine_id""")
+            notif_result = await db.execute(notif_query, {"machine_id": machine['machine_id']})
+            notif = notif_result.scalars().first()
+            print(notif)
+            machine['user_id'] = notif if notif else None
+        else:
+            machine['user_id'] = None
+    print(machines)
+    return {
+        "user_id": user["user_id"],
+        "machines": machines
+    }
 #returns a list [] of machines in the schema declared in schemas.MachineOut
 #class MachineOut(BaseModel):
 #    machine_id: int
 #    machine_type: MachineTypeEnum
 #    status: Optional[MachineStatusEnum]
 #    machine_name: str
+#    user_id : int or None
 
 @app.post("/{machine_id}")
 async def start_machine(machine_id: int,
@@ -110,6 +123,36 @@ async def start_machine(machine_id: int,
     return {"message" : "Timer has been set successfully"}
 
 
+@app.post("/collect/{machine_id}")
+async def collect_machine(machine_id: int,
+                        user: user_dependency,
+                        db: AsyncSession = Depends(get_db)):
+    query = text("SELECT * FROM machines WHERE machine_id = :machine_id")
+    result = await db.execute(query, {"machine_id": machine_id})
+    machine = result.fetchone()
+
+    #Validate Machine and User
+    if not machine:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Machine not Found")
+    if machine.status != 'complete':
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Machine status is not complete")
+    notif_query = text(
+        "SELECT * FROM notifications WHERE telegram_id = :user_id AND machine_id = :machine_id"
+    )
+    notif_result = await db.execute(notif_query, {"user_id" : user["user_id"], "machine_id" : machine_id})
+    notification = notif_result.fetchone()
+    if not notification:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not own this machine")
+    
+    # Update machine status to available
+    update_query = text(
+        "UPDATE machines SET status = 'available' WHERE machine_id = :machine_id"
+    )
+    await db.execute(update_query, {"machine_id": machine_id})
+    await db.commit()
+
+    return {"message": "Machine status updated to available"}
+
 
 async def machine_complete_updater(machine_id: int, delay_minutes: int, db: AsyncSession):
     await asyncio.sleep(delay_minutes)
@@ -125,11 +168,6 @@ async def machine_complete_updater(machine_id: int, delay_minutes: int, db: Asyn
     if row:
         chat_id = row.telegram_id
         await send_telegram_message(chat_id, f"✅ Your laundry on machine {machine_id} is complete!")
-
-    # Clean up notification
-    await db.execute(text("DELETE FROM notifications WHERE machine_id = :machine_id"), {"machine_id": machine_id})
-    await db.commit()
-
 
 async def send_telegram_message(chat_id: str, message: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"

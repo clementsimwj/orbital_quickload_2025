@@ -20,7 +20,7 @@ import { RFValue } from "react-native-responsive-fontsize";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import MachineData from "@/components/MachineData";
 import Dropdown from '../components/Dropdown';
 import axios from "axios";
@@ -31,15 +31,19 @@ interface Washer {
   machine_type: 'washer' | 'dryer';
   status: 'available' | 'in use' | 'complete' | null;
   machine_name: string;
+  user_id?: number | null;
 }
 
 export default function Index() {
   //Authentication Check:
   const { token, logout, isAuthenticated, isLoading } = useAuth();
   const [userData, setUserData] = useState<String>();
+  const [userId, setUserId] = useState<number>();
   const [loadingUser, setLoadingUser] = useState(true);
+  const machinesRef = useRef<Washer[]>([]);
   const [machines, setMachines] = useState<Washer[]>([]);
   const [loadingMachines, setLoadingMachines] = useState(false);
+  
 
   const items = [
   { value : 0, label: "Ridge View Residential College"},
@@ -53,7 +57,40 @@ export default function Index() {
   const [selectedResidence, setSelectedResidence] = useState<number>();
   const [selectedMachineId, setSelectedMachineId] = useState<number|null>(null);
   const [selectedMachineName, setSelectedMachineName] = useState<string>('');
+  const renderMachine = useCallback(({ item }: { item: Washer }) => (
+  <MachineData
+    type={item.machine_type}
+    name={item.machine_name}
+    status={item.status}
+    onPress={() => handlePress(item.machine_id, item.machine_name, item.status, item.user_id)}
+    isSelected={selectedMachineId === item.machine_id}
+    machineUserId={item.user_id ?? null}
+    currentUserId={userId ?? null}
+  />
+), [selectedMachineId, userId]);
 
+const fetchMachines = async () => {
+    console.log("Fetching Machines...")
+    if (isAuthenticated && token && selectedResidence !== undefined) {
+      setLoadingMachines(true);
+      axios.get(`http://10.0.2.2:8000/${selectedResidence}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        const responseData = response.data;
+        setUserId(responseData.user_id);
+        const newData = responseData.machines;
+        machinesRef.current = newData;
+        setMachines(newData);
+      })
+      .catch((error) => {
+        Alert.alert("Error", "Failed to fetch machines.");
+        console.error(error);
+      }).finally(() => {
+        setLoadingMachines(false);
+      });
+    }
+  };
   //Handle select residence from dropdown menu
   const handleSelect = (item: any) => {
     console.log("Selected: ", item)
@@ -61,19 +98,36 @@ export default function Index() {
   };
 
   //Handle selecting available machines
-  const handlePress = (machine_id: number, machine_name: string, status: string | null) => {
+  const handlePress = async(
+    machine_id: number,
+    machine_name: string,
+    status: string | null,
+    machineUserId?: number | null
+  ) => {
     if (status === "available") {
       setSelectedMachineId(machine_id);
       setSelectedMachineName(machine_name);
+    } else if (status === "complete" && machineUserId === userId) {
+      try {
+        const response = await axios.post(
+          `http://10.0.2.2:8000/collect/${machine_id}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}`}}
+        );
+        console.log("Success!")
+        Alert.alert("Success", "Thank you for collecting your laundry and using QuickLoad! We wish you a good day ahead!");
+        fetchMachines();
+      } catch (error: any) {
+        Alert.alert("Error", error.response?.data?.detail || "Failed to collect machine");
+      }
     }
-  };
-
+  }
   //Handle Starting Machine Logic here
   const handleStart = (duration: number) => {
     console.log(`Starting machine_id: ${selectedMachineId} (${selectedMachineName}) for ${duration} mins`);
     //Add API call here
     axios.post(`http://10.0.2.2:8000/${selectedMachineId}`, {
-      duration: 45
+      duration: duration
     }, {
       headers: {Authorization: `Bearer ${token}`}
     }).then((message) => console.log(message))
@@ -87,6 +141,7 @@ export default function Index() {
         headers : {Authorization : `Bearer ${token}`},
       })
       .then((response) => {
+        setUserId(response.data.user_id);
         setUserData(response.data.User.handle);
         setLoadingUser(false);
       })
@@ -99,39 +154,9 @@ export default function Index() {
     }
   }, [isAuthenticated, token]);
 
+//fetch machine every 5 seconds
 useEffect(() => {
   let intervalId: NodeJS.Timeout;
-  const fetchMachines = () => {
-    console.log("Fetching Machines...")
-    if (isAuthenticated && token && selectedResidence !== undefined) {
-      setLoadingMachines(true);
-      axios.get(`http://10.0.2.2:8000/${selectedResidence}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        const newData = response.data;
-        const dataChanged =
-          machines.length !== newData.length ||
-          machines.some((oldMachine, index) => {
-            const newMachine = newData[index];
-            return (
-              oldMachine.machine_id !== newMachine.machine_id ||
-              oldMachine.status !== newMachine.status
-            );
-          });
-
-        if (dataChanged) {
-          setMachines(newData);
-        }
-        setLoadingMachines(false);
-      })
-      .catch((error) => {
-        Alert.alert("Error", "Failed to fetch machines.");
-        console.error(error);
-        setLoadingMachines(false);
-      });
-    }
-  };
   fetchMachines();
   intervalId = setInterval(fetchMachines, 5000);
   return () => clearInterval(intervalId);
@@ -168,25 +193,13 @@ useEffect(() => {
   <FlatList
     data={machines}
     keyExtractor={(item) => item.machine_id.toString()}
-    renderItem={({ item }) => (
-      <MachineData
-        key={item.machine_id}
-        type={item.machine_type}
-        name={item.machine_name}
-        status={item.status}
-        onPress={() => handlePress(item.machine_id, item.machine_name, item.status)}
-        isSelected={selectedMachineId === item.machine_id}
-      />
-    )}
+    renderItem={renderMachine}
+    extraData={selectedMachineId}
     contentContainerStyle={{
       padding: 16,
       paddingBottom: 100,
     }}
     showsVerticalScrollIndicator={false}
-    // ✅ Optional if items might be added/removed and you want scroll to stick
-    maintainVisibleContentPosition={{
-      minIndexForVisible: 0,
-    }}
     // ✅ Add space between items
     ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
     // ✅ Show the timer modal after the list

@@ -4,30 +4,33 @@ import { responsiveWidth, responsiveHeight } from "react-native-responsive-dimen
 import { RFValue } from "react-native-responsive-fontsize";
 
 type Props = {
-  key : number;
   name: string;
   type: string;
   status: string | null;
+  machineUserId?: number | null;
+  currentUserId?: number | null;
   onPress?: () => void;
   isSelected?: boolean;
   children?: React.ReactNode;
 };
 
-const MachineData: React.FC<Props> = ({ name, status, type, onPress, isSelected, children }) => {
+const MachineData: React.FC<Props> = ({ name, status, type, machineUserId, currentUserId, onPress, isSelected, children }) => {
   const availableImage = '../assets/images/availableImage.png';
   const hourglassImage = '../assets/images/hourglass.png';
   const collectImage = '../assets/images/collect.png';
   const isAvailable = status === "available";
   const isDone = status === "complete";
+  const isOwned = isDone && machineUserId === currentUserId;
+  const isPressable = isAvailable || isOwned;
   const iconURL = isAvailable ? require(availableImage) : isDone ? require(collectImage) : require(hourglassImage);
 
   return (
     <TouchableOpacity
-      onPress={isAvailable || isDone ? onPress : undefined}
-      disabled={!(isAvailable || isDone)}
+      onPress={isPressable ? onPress : undefined}
+      disabled={!isPressable}
       style={[
         styles.container,
-        { opacity: isAvailable || isDone ? 1 : 0.5 },
+        { opacity: isPressable ? 1 : 0.5 },
       ]}
     >
       <Text style={styles.name}>{name}</Text>
