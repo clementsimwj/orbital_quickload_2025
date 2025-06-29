@@ -83,9 +83,10 @@ async def update_handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 #run the telegram bot
-app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("register", register))
-app.add_handler(CommandHandler("changepassword", change_password))
-app.add_handler(CommandHandler("update", update_handle))
-app.run_polling()
+async def run_bot():
+    app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("register", register))
+    app.add_handler(CommandHandler("changepassword", change_password))
+    app.add_handler(CommandHandler("update", update_handle))
+    await app.run_polling()
