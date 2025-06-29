@@ -34,15 +34,6 @@ app.add_middleware(
 app.include_router(auth.router)
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-#To get all users (experiment only don't actually use this route)
-@app.get("/users", response_model=list[schemas.User])
-async def get_users(db: AsyncSession = Depends(get_db)):
-    query = text("SELECT telegram_id, telegram_handle, session FROM users")
-    result = await db.execute(query)
-    users = result.mappings().all()
-    return users
-
-
 #homepage
 @app.get("/", status_code=status.HTTP_200_OK)
 async def user(user: user_dependency):

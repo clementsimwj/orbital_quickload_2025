@@ -193,7 +193,7 @@ useEffect(() => {
                     onSelect={handleSelect}/>
       </View>
       <Text style={{fontSize: RFValue(15), color: "#c8cac9", fontWeight:'bold'}}>Washing Machine Status:</Text>
-{selectedResidence !== undefined && !loadingMachines && (
+{selectedResidence !== undefined && (
   <FlatList
     data={machines}
     keyExtractor={(item) => item.machine_id.toString()}
