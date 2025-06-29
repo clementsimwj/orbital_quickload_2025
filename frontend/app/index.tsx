@@ -75,7 +75,7 @@ const fetchMachines = async () => {
     console.log("Fetching Machines...")
     if (isAuthenticated && token && selectedResidence !== undefined) {
       setLoadingMachines(true);
-      axios.get(`http://10.0.2.2/${selectedResidence}`, {
+      axios.get(`https://orbital-quickload-2025.onrender.com/${selectedResidence}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -113,7 +113,7 @@ const fetchMachines = async () => {
     } else if (status === "complete" && machineUserId === userId) {
       try {
         const response = await axios.post(
-          `http://10.0.2.2/collect/${machine_id}`,
+          `https://orbital-quickload-2025.onrender.com/collect/${machine_id}`,
           {},
           { headers: { Authorization: `Bearer ${token}`}}
         );
@@ -130,7 +130,7 @@ const fetchMachines = async () => {
   const handleStart = (duration: number) => {
     console.log(`Starting machine_id: ${selectedMachineId} (${selectedMachineName}) for ${duration} mins`);
     //Add API call here
-    axios.post(`http://10.0.2.2/${selectedMachineId}`, {
+    axios.post(`https://orbital-quickload-2025.onrender.com/${selectedMachineId}`, {
       duration: duration
     }, {
       headers: {Authorization: `Bearer ${token}`}
@@ -141,7 +141,7 @@ const fetchMachines = async () => {
 
   useEffect(() => {
     if(isAuthenticated && token) {
-      axios.get(`http://10.0.2.2/`, {
+      axios.get(`https://orbital-quickload-2025.onrender.com/`, {
         headers : {Authorization : `Bearer ${token}`},
       })
       .then((response) => {
