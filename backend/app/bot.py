@@ -1,7 +1,6 @@
 import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, Updater, CommandHandler, MessageHandler, filters, CallbackContext, ContextTypes
-from configurations import users_collection
 import os
 import requests
 from dotenv import load_dotenv
@@ -92,6 +91,9 @@ async def run_bot():
     app.add_handler(CommandHandler("changepassword", change_password))
     app.add_handler(CommandHandler("update", update_handle))
     print("Initialising bot...")
-    await app.initialize()
+    await app.initialize()  # initializes without starting the loop
+    
+    # Start polling but don't block, run in background
     asyncio.create_task(app.start())
+    asyncio.create_task(app.updater.start_polling())
     print("Bot is running in background")
