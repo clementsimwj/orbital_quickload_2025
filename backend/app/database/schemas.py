@@ -25,6 +25,7 @@ class MachineOut(BaseModel):
     status: Optional[MachineStatusEnum]
     machine_name: str
     user_id : Optional[int]
+    time_remaining: Optional[int] = None
 
     class Config:
         orm_mode = True

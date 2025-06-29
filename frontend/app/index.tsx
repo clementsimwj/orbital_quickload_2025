@@ -32,6 +32,7 @@ interface Washer {
   status: 'available' | 'in use' | 'complete' | null;
   machine_name: string;
   user_id?: number | null;
+  time_remaining?: number | null;
 }
 
 export default function Index() {
@@ -66,6 +67,7 @@ export default function Index() {
     isSelected={selectedMachineId === item.machine_id}
     machineUserId={item.user_id ?? null}
     currentUserId={userId ?? null}
+    timeRemaining={item.time_remaining ?? null}
   />
 ), [selectedMachineId, userId]);
 
@@ -80,6 +82,7 @@ const fetchMachines = async () => {
         const responseData = response.data;
         setUserId(responseData.user_id);
         const newData = responseData.machines;
+        console.log(newData);
         machinesRef.current = newData;
         setMachines(newData);
       })
@@ -118,6 +121,7 @@ const fetchMachines = async () => {
         Alert.alert("Success", "Thank you for collecting your laundry and using QuickLoad! We wish you a good day ahead!");
         fetchMachines();
       } catch (error: any) {
+        console.log(error);
         Alert.alert("Error", error.response?.data?.detail || "Failed to collect machine");
       }
     }

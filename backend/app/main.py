@@ -70,11 +70,32 @@ async def get_machines_by_residence(residence_id: int,
 
     for machine in machines:
         if machine['status'] == "complete":
-            notif_query = text("""SELECT telegram_id from notifications WHERE machine_id = :machine_id""")
+            notif_query = text("""SELECT telegram_id from notifications WHERE machine_id = :machine_id and done = false""")
             notif_result = await db.execute(notif_query, {"machine_id": machine['machine_id']})
             notif = notif_result.scalars().first()
             print(notif)
             machine['user_id'] = notif if notif else None
+        elif machine['status'] == "in use":
+            notif_query = text("""
+                SELECT telegram_id, time_end FROM notifications
+                WHERE machine_id = :machine_id AND done = false
+                ORDER BY time_end DESC LIMIT 1
+            """)
+            notif_result = await db.execute(notif_query, {"machine_id": machine['machine_id']})
+            notif = notif_result.mappings().first()
+            if notif:
+                time_end = notif['time_end']
+                now = datetime.now()  # naive if your DB stores naive timestamps
+
+                remaining_seconds = (time_end - now).total_seconds()
+                if remaining_seconds < 0:
+                    remaining_seconds = 0  # clamp to zero if overdue
+
+                machine['time_remaining'] = int(remaining_seconds)
+                machine['user_id'] = notif['telegram_id']
+            else:
+                machine['time_remaining'] = None
+                machine['user_id'] = None
         else:
             machine['user_id'] = None
     print(machines)
@@ -90,6 +111,7 @@ async def get_machines_by_residence(residence_id: int,
 #    machine_name: str
 #    user_id : int or None
 
+#Indicates the machine to use
 @app.post("/{machine_id}")
 async def start_machine(machine_id: int,
                         body: schemas.TimerStart,
@@ -122,7 +144,7 @@ async def start_machine(machine_id: int,
     asyncio.create_task(machine_complete_updater(machine_id, body.duration, db))
     return {"message" : "Timer has been set successfully"}
 
-
+#Collect the laundry from any specific machine
 @app.post("/collect/{machine_id}")
 async def collect_machine(machine_id: int,
                         user: user_dependency,
@@ -137,10 +159,11 @@ async def collect_machine(machine_id: int,
     if machine.status != 'complete':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Machine status is not complete")
     notif_query = text(
-        "SELECT * FROM notifications WHERE telegram_id = :user_id AND machine_id = :machine_id"
+        "SELECT * FROM notifications WHERE telegram_id = :user_id AND machine_id = :machine_id AND done = false"
     )
     notif_result = await db.execute(notif_query, {"user_id" : user["user_id"], "machine_id" : machine_id})
     notification = notif_result.fetchone()
+    print(notification)
     if not notification:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not own this machine")
     
@@ -149,24 +172,29 @@ async def collect_machine(machine_id: int,
         "UPDATE machines SET status = 'available' WHERE machine_id = :machine_id"
     )
     await db.execute(update_query, {"machine_id": machine_id})
+    update_notification_query = text("""
+        UPDATE notifications SET done = true WHERE notification_id = :notif_id
+    """)
+    await db.execute(update_notification_query, {"notif_id": notification.notification_id})
     await db.commit()
 
     return {"message": "Machine status updated to available"}
 
 
 async def machine_complete_updater(machine_id: int, delay_minutes: int, db: AsyncSession):
-    await asyncio.sleep(delay_minutes)
+    await asyncio.sleep(delay_minutes * 60)
     query = text("UPDATE machines SET status = 'complete' WHERE machine_id = :machine_id")
     await db.execute(query, {"machine_id": machine_id})
     await db.commit()
 
     result = await db.execute(
-        text("SELECT telegram_id FROM notifications WHERE machine_id = :machine_id"),
+        text("SELECT telegram_id FROM notifications WHERE machine_id = :machine_id AND done = false"),
         {"machine_id": machine_id}
     )
     row = result.fetchone()
     if row:
         chat_id = row.telegram_id
+        print(chat_id)
         await send_telegram_message(chat_id, f"✅ Your laundry on machine {machine_id} is complete!")
 
 async def send_telegram_message(chat_id: str, message: str):
