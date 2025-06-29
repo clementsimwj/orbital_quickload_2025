@@ -77,6 +77,8 @@ async def get_machines_by_residence(residence_id: int,
             if notif:
                 time_end = notif['time_end']
                 now = datetime.now()  # naive if your DB stores naive timestamps
+                print("TIME END: " + time_end)
+                print(now)
 
                 remaining_seconds = (time_end - now).total_seconds()
                 if remaining_seconds < 0:
