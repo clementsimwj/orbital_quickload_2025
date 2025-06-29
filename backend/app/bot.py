@@ -1,3 +1,4 @@
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, Updater, CommandHandler, MessageHandler, filters, CallbackContext, ContextTypes
 from configurations import users_collection
@@ -84,9 +85,13 @@ async def update_handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 #run the telegram bot
 async def run_bot():
+    print("Starting Bot")
     app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("register", register))
     app.add_handler(CommandHandler("changepassword", change_password))
     app.add_handler(CommandHandler("update", update_handle))
-    await app.run_polling()
+    print("Initialising bot...")
+    await app.initialize()
+    asyncio.create_task(app.start())
+    print("Bot is running in background")
