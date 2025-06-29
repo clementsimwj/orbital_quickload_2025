@@ -17,7 +17,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.clementsimwj.QuickLoad"
     },
     "web": {
       "bundler": "metro",
@@ -38,8 +39,14 @@
       "expo-secure-store"
     ],
     "experiments": {
-      "router" : true,
+      "router": true,
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e6341e2e-b13e-43a7-992e-3e892863a19f"
+      }
     }
   }
 }
