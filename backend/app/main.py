@@ -36,12 +36,6 @@ app.add_middleware(
 app.include_router(auth.router)
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-@app.post(WEBHOOK_PATH)
-async def telegram_webhook(request: Request):
-    update = await request.json()
-    await bot_app.update_queue.put(update)
-    return {"ok": True}
-
 #homepage
 @app.get("/", status_code=status.HTTP_200_OK)
 async def user(user: user_dependency):
