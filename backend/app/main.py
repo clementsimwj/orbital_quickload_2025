@@ -14,7 +14,6 @@ from auth import get_current_user
 import os
 import requests
 from dotenv import load_dotenv
-from bot import bot_app
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
