@@ -91,9 +91,10 @@ async def run_bot():
     app.add_handler(CommandHandler("changepassword", change_password))
     app.add_handler(CommandHandler("update", update_handle))
     print("Initialising bot...")
-    await app.initialize()  # initializes without starting the loop
-    
-    # Start polling but don't block, run in background
-    asyncio.create_task(app.start())
-    asyncio.create_task(app.updater.start_polling())
+    await app.initialize()
+    await app.start()
     print("Bot is running in background")
+    # keep the bot running without blocking the caller
+    # do NOT call run_polling here because it blocks
+    # just return app so the caller can await app.updater or shutdown later
+    return app

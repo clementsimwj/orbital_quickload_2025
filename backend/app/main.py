@@ -19,11 +19,17 @@ from bot import run_bot
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+bot_app = None
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global bot_app
     await create_tables()
-    asyncio.create_task(run_bot())
+    bot_app = await run_bot()
     yield
+
+    await bot_app.stop()
+    await bot_app.shutdown()
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
