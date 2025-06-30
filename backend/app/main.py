@@ -26,6 +26,7 @@ WEBHOOK_URL = f"https://orbital-quickload-2025.onrender.com{WEBHOOK_PATH}"
 async def lifespan(app: FastAPI):
     await create_tables()
     await bot_app.initialize()
+    await bot_app.bot.delete_webhook(drop_pending_updates=True)
     await bot_app.bot.set_webhook(WEBHOOK_URL)
     yield
     await bot_app.shutdown()
