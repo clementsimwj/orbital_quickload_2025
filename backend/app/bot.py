@@ -95,7 +95,6 @@ async def run_bot():
     await app.initialize()
     await app.start()
     await app.updater.start_polling()
-    await app.updater.idle()
     print("Bot is running in background")
     # keep the bot running without blocking the caller
     # do NOT call run_polling here because it blocks
