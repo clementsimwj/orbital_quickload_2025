@@ -18,19 +18,11 @@ from bot import bot_app
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_PATH = "/telegram-webhook"
-WEBHOOK_URL = f"https://orbital-quickload-2025.onrender.com{WEBHOOK_PATH}"
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_tables()
-    await bot_app.initialize()
-    await bot_app.bot.delete_webhook(drop_pending_updates=True)
-    await bot_app.bot.set_webhook(WEBHOOK_URL)
-    await bot_app.start()
     yield
-    await bot_app.shutdown()
     
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
