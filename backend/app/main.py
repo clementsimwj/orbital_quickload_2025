@@ -2,7 +2,7 @@ import asyncio
 import httpx
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated, List
 import auth
@@ -14,18 +14,21 @@ from auth import get_current_user
 import os
 import requests
 from dotenv import load_dotenv
-from bot import run_bot, stop_bot
+from bot import bot_app
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_PATH = "/telegram-webhook"
+WEBHOOK_URL = f"https://orbital-quickload-2025.onrender.com{WEBHOOK_PATH}"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_tables()
-    asyncio.create_task(run_bot())
+    await bot_app.initialize()
+    await bot_app.bot.set_webhook(WEBHOOK_URL)
     yield
-    await stop_bot()
+    await bot_app.shutdown()
     
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
@@ -38,6 +41,12 @@ app.add_middleware(
 )
 app.include_router(auth.router)
 user_dependency = Annotated[dict, Depends(get_current_user)]
+
+@app.post(WEBHOOK_PATH)
+async def telegram_webhook(request: Request):
+    update = await request.json()
+    await bot_app.update_queue.put(update)
+    return {"ok": True}
 
 #homepage
 @app.get("/", status_code=status.HTTP_200_OK)
