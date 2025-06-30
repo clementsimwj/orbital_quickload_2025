@@ -28,6 +28,7 @@ async def lifespan(app: FastAPI):
     await bot_app.initialize()
     await bot_app.bot.delete_webhook(drop_pending_updates=True)
     await bot_app.bot.set_webhook(WEBHOOK_URL)
+    await bot_app.start()
     yield
     await bot_app.shutdown()
     
