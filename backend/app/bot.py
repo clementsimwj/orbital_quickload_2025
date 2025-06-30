@@ -80,21 +80,28 @@ async def update_handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Server error.")
         print(e)
 
+app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
+
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("register", register))
+app.add_handler(CommandHandler("changepassword", change_password))
+app.add_handler(CommandHandler("update", update_handle))
 
 
 #run the telegram bot
 async def run_bot():
     print("Starting Bot")
-    app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("register", register))
-    app.add_handler(CommandHandler("changepassword", change_password))
-    app.add_handler(CommandHandler("update", update_handle))
     print("Initialising bot...")
     await app.initialize()
     await app.start()
+    await app.updater.start_polling()
     print("Bot is running in background")
     # keep the bot running without blocking the caller
     # do NOT call run_polling here because it blocks
     # just return app so the caller can await app.updater or shutdown later
-    return app
+
+async def stop_bot():
+    await app.updater.stop()
+    await app.stop()
+    await app.shutdown()
+    print("Bot has been stopped")
