@@ -6,6 +6,8 @@ from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated, List
 import auth
+
+from store import router as store_router
 from database import schemas
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,6 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth.router)
+app.include_router(store_router)
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
 #homepage

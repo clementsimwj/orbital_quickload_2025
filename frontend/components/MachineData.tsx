@@ -39,7 +39,7 @@ const MachineData: React.FC<Props> = ({ name, status, type, timeRemaining, machi
       <View style={styles.statusContainer}>
         <Image style={styles.icon} source={iconURL} resizeMode="contain" />
         {status === "in use" && timeRemaining !== null && (
-          <Text>{`Time remaining: ${Math.round(timeRemaining/60)} mins`}</Text>
+          <Text>{`Time remaining: ${Math.round((timeRemaining-(8*60*60))/60)} mins`}</Text>
         )}
       </View>
       {isSelected && children}

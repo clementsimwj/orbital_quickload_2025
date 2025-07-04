@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-from sqlalchemy import DateTime, Enum, Boolean, Column, ForeignKey, Integer, String, BigInteger
+from sqlalchemy import DateTime, Enum, Boolean, Column, Float, ForeignKey, Integer, Numeric, String, BigInteger
 from configurations import Base
 from sqlalchemy.orm import declarative_base, relationship
 import enum
@@ -46,6 +45,18 @@ class Notification(Base):
     time_end = Column(DateTime, nullable=False)
     machine_id = Column(Integer, ForeignKey("machines.machine_id"), nullable=False)
     telegram_id = Column(BigInteger, ForeignKey("users.telegram_id"), nullable=False)
+    done = Column(Boolean, nullable=False, default=False)
 
     machine = relationship("Machine", backref="notifications")
     user = relationship("User", backref="notifications")
+
+class Item(Base):
+    __tablename__ = "items"
+
+    item_id = Column(Integer, primary_key=True, index=True)
+    item_name = Column(String, index=True)
+    item_price = Column(Numeric(10, 2), nullable=False)
+    item_desc = Column(String, nullable=True)
+    item_seller = Column(BigInteger, ForeignKey("users.telegram_id"), nullable=False)
+
+    user = relationship("User", backref="items")

@@ -37,3 +37,19 @@ class TimerStart(BaseModel):
 class MachinesByResidenceOut(BaseModel):
     user_id : int 
     machines: List[MachineOut]
+
+
+class ItemBase(BaseModel):
+    item_name: str
+    item_price: float
+    item_desc: str | None = None
+
+class ItemCreate(ItemBase):
+    pass
+
+class Item(ItemBase):
+    item_id: int
+    item_seller: int
+    
+    class Config:
+        orm_mode = True
