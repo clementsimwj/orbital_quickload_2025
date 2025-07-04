@@ -22,7 +22,7 @@ import { Redirect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import MachineData from "@/components/MachineData";
-import Dropdown from '../components/Dropdown';
+import Dropdown from '@/components/Dropdown';
 import axios from "axios";
 import SetTimer from "@/components/SetTimer";
 
@@ -75,7 +75,7 @@ const fetchMachines = async () => {
     console.log("Fetching Machines...")
     if (isAuthenticated && token && selectedResidence !== undefined) {
       setLoadingMachines(true);
-      axios.get(`https://orbital-quickload-2025.onrender.com/${selectedResidence}`, {
+      axios.get(`http://10.0.2.2:8000/${selectedResidence}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -113,7 +113,7 @@ const fetchMachines = async () => {
     } else if (status === "complete" && machineUserId === userId) {
       try {
         const response = await axios.post(
-          `https://orbital-quickload-2025.onrender.com/collect/${machine_id}`,
+          `http://10.0.2.2:8000/collect/${machine_id}`,
           {},
           { headers: { Authorization: `Bearer ${token}`}}
         );
@@ -130,7 +130,7 @@ const fetchMachines = async () => {
   const handleStart = (duration: number) => {
     console.log(`Starting machine_id: ${selectedMachineId} (${selectedMachineName}) for ${duration} mins`);
     //Add API call here
-    axios.post(`https://orbital-quickload-2025.onrender.com/${selectedMachineId}`, {
+    axios.post(`http://10.0.2.2:8000/${selectedMachineId}`, {
       duration: duration
     }, {
       headers: {Authorization: `Bearer ${token}`}
@@ -141,7 +141,7 @@ const fetchMachines = async () => {
 
   useEffect(() => {
     if(isAuthenticated && token) {
-      axios.get(`https://orbital-quickload-2025.onrender.com/`, {
+      axios.get(`http://10.0.2.2:8000/`, {
         headers : {Authorization : `Bearer ${token}`},
       })
       .then((response) => {
@@ -181,7 +181,7 @@ useEffect(() => {
       <View style={styles.upperWrapper}>
         <View style={{flexDirection:'row', alignItems:'center', justifyContent:'center'}}>
           <TouchableOpacity onPress={logout}>
-            <Image style={styles.logoutImage} resizeMode='contain'source={require("../assets/images/logoutButton.png")}/>
+            <Image style={styles.logoutImage} resizeMode='contain'source={require("../../assets/images/logoutButton.png")}/>
           </TouchableOpacity>
           <Text style={styles.title}>Welcome: </Text>
         </View>
