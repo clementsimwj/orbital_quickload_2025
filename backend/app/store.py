@@ -2,6 +2,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select
+from sqlalchemy.orm import joinedload
 
 from typing import Annotated, List
 from configurations import get_db
@@ -22,10 +23,19 @@ async def get_items(user: user_dependency,
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
-    result = await db.execute(select(models.Item))
+    result = await db.execute(select(models.Item).options(joinedload(models.Item.user)))
     items = result.scalars().all()
-    
-    return items
+    response = [
+        {
+            "item_id": item.item_id,
+            "item_name": item.item_name,
+            "item_desc": item.item_desc,
+            "item_price": item.item_price,
+            "item_seller": item.user.telegram_handle
+        }
+        for item in items
+    ]
+    return response
 
 #Add Item
 @router.post("/add_item", response_model=schemas.Item, status_code=status.HTTP_201_CREATED)

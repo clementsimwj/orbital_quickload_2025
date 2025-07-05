@@ -7,33 +7,75 @@ import {
   TouchableOpacity,
   Button,
   Alert,
+  ActivityIndicator,
+  FlatList,
 } from "react-native";
 import {
   responsiveHeight,
   responsiveWidth,
 } from "react-native-responsive-dimensions";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { RFValue } from "react-native-responsive-fontsize";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import KeyboardAvoidingContatiner from "@/components/KeyboardAvoidingContainer";
 import { useAuth } from '@/context/AuthContext'
+import Item from "@/components/Item";
 
+interface Item {
+    item_id: number;
+    item_name: string;
+    item_price: number;
+    item_desc: string | null;
+    item_seller: string;
+}
 
 export default function Store() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const {login} = useAuth();
-  const handleLogin = async () => {
-    const success = await login(username, password);
-    if (success) {
-      router.replace('/');
-    } else {
-      Alert.alert('Login Failed', 'Invalid Credentials');
-    }
-  }
+  const { token, isAuthenticated, isLoading } = useAuth();
+  const[userId, setUserId] = useState<number | null>(null);
   const router = useRouter();
+
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchItems = async () => {
+    console.log("Fetching Items...")
+    if (isAuthenticated && token) {
+      axios.get(`http://10.0.2.2:8000/store/items`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        console.log(response.data);
+        setItems(response.data);
+      })
+      .catch((error) => {
+        Alert.alert("Error", "Failed to fetch machines.");
+        console.error(error);
+      }).finally(() => {
+        setLoading(false);
+      });
+    }
+  };
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    fetchItems();
+    intervalId = setInterval(fetchItems, 5000);
+    return () => clearInterval(intervalId);
+  }, [isAuthenticated, token]);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#EF7C00" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/login" />;
+  }
   return (
     <KeyboardAvoidingContatiner>
       <SafeAreaView style={styles.container}>
@@ -46,7 +88,24 @@ export default function Store() {
           <Text style={styles.title}>QuickMarket:</Text>
         </View>
         <View style={styles.lowerWrapper}>
-          
+           {loading ? (
+            <ActivityIndicator size="large" color="#EF7C00" />
+            ) : (
+              <FlatList
+                data={items}
+                keyExtractor={(item) => item.item_id.toString()}
+                renderItem={({ item }: { item: Item }) => (
+                  <Item
+                    item_id={item.item_id}
+                    item_name={item.item_name}
+                    item_price={item.item_price}
+                    item_desc={item.item_desc}
+                    item_seller={item.item_seller}
+                  />
+                )}
+                contentContainerStyle={{ paddingBottom: 50 }}
+              />
+          )}
         </View>
       </SafeAreaView>
     </KeyboardAvoidingContatiner>

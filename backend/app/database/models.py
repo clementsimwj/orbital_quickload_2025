@@ -11,6 +11,8 @@ class User(Base):
     password = Column(String(255), nullable=False)
     session = Column(String(255), nullable=False)
 
+    items = relationship("Item", back_populates="user")
+
 class Residence(Base):
     __tablename__ = 'residences'
     residence_id = Column(Integer, primary_key=True, index=True)
@@ -59,4 +61,4 @@ class Item(Base):
     item_desc = Column(String, nullable=True)
     item_seller = Column(BigInteger, ForeignKey("users.telegram_id"), nullable=False)
 
-    user = relationship("User", backref="items")
+    user = relationship("User", back_populates="items")
