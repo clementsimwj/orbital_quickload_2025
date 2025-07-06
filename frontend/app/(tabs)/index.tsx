@@ -145,7 +145,7 @@ const fetchMachines = async () => {
         headers : {Authorization : `Bearer ${token}`},
       })
       .then((response) => {
-        console.log(response);
+        console.log(response.data);
         setUserId(response.data.user_id);
         setUserData(response.data.User.handle);
         setLoadingUser(false);

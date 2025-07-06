@@ -24,15 +24,17 @@ import { useAuth } from '@/context/AuthContext'
 import Item from "@/components/Item";
 
 interface Item {
+    currentUser: number | null;
     item_id: number;
     item_name: string;
     item_price: number;
     item_desc: string | null;
     item_seller: string;
+    item_sellerId: number;
 }
 
 export default function Store() {
-  const { token, isAuthenticated, isLoading } = useAuth();
+  const { token, isAuthenticated, isLoading, logout } = useAuth();
   const[userId, setUserId] = useState<number | null>(null);
   const router = useRouter();
 
@@ -46,8 +48,13 @@ export default function Store() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
-        console.log(response.data);
-        setItems(response.data);
+        const responseData = response.data;
+        const itemData = responseData.Items;
+        const currUser = responseData.User;
+        console.log(currUser);
+        console.log(itemData);
+        setItems(itemData);
+        setUserId(currUser.user_id);
       })
       .catch((error) => {
         Alert.alert("Error", "Failed to fetch machines.");
@@ -80,6 +87,9 @@ export default function Store() {
     <KeyboardAvoidingContatiner>
       <SafeAreaView style={styles.container}>
         <View style={styles.upperWrapper}>
+          <TouchableOpacity onPress={logout} style={{marginRight:responsiveWidth(2)}}>
+            <Image style={styles.logoutImage} resizeMode='contain'source={require("../../assets/images/logoutButton.png")}/>
+          </TouchableOpacity>
           <Image
             style={styles.logo}
             resizeMode="contain"
@@ -96,17 +106,26 @@ export default function Store() {
                 keyExtractor={(item) => item.item_id.toString()}
                 renderItem={({ item }: { item: Item }) => (
                   <Item
+                    currentUser={userId}
                     item_id={item.item_id}
                     item_name={item.item_name}
                     item_price={item.item_price}
                     item_desc={item.item_desc}
                     item_seller={item.item_seller}
+                    item_sellerId={item.item_sellerId}
                   />
                 )}
-                contentContainerStyle={{ paddingBottom: 50 }}
+                contentContainerStyle={{padding: 16, paddingBottom: 100,}}
+                ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
               />
           )}
         </View>
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => router.push('/add')}
+        >
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     </KeyboardAvoidingContatiner>
   );
@@ -137,9 +156,35 @@ const styles = StyleSheet.create({
     height: responsiveHeight(20),
   },
   lowerWrapper: {
-    marginVertical: responsiveHeight(10),
+    marginVertical: responsiveHeight(5),
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: responsiveWidth(5),
   },
+  logoutImage : {
+    width: responsiveWidth(8),
+    height: responsiveHeight(8),
+  },
+  fab: {
+  position: 'absolute',
+  bottom: responsiveHeight(0.5),
+  right: responsiveWidth(5),
+  backgroundColor: '#EF7C00',
+  width: responsiveWidth(15),
+  height: responsiveHeight(7),
+  borderRadius: 50,
+  justifyContent: 'center',
+  alignItems: 'center',
+  elevation: 5,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 3,
+},
+fabText: {
+  color: 'white',
+  fontSize: RFValue(30),
+  lineHeight: 30,
+  fontWeight: 'bold',
+},
 });

@@ -1,57 +1,61 @@
+import { sortRoutesWithInitial } from 'expo-router/build/sortRoutes';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { responsiveHeight, responsiveWidth } from 'react-native-responsive-dimensions';
+import { RFValue } from 'react-native-responsive-fontsize';
 
 type ItemProps = {
+    currentUser: number | null;
     item_id: number;
     item_name: string;
     item_price: number;
     item_desc: string | null;
     item_seller: string;
+    item_sellerId: number;
 };
 
-const Item: React.FC<ItemProps> = ({item_id, item_name, item_price, item_desc, item_seller }) => {
+const Item: React.FC<ItemProps> = ({currentUser, item_id, item_name, item_price, item_desc, item_seller, item_sellerId }) => {
+  const isPressable = currentUser !== item_sellerId;
   return (
-    <View style={styles.container}>
-      <Text style={styles.name}>{item_name}</Text>
-      <Text style={styles.price}>Price: ${item_price.toFixed(2)}</Text>
-      <Text style={styles.desc}>{item_desc}</Text>
-      <Text style={styles.seller}>Seller: @{item_seller}</Text>
-    </View>
+    <TouchableOpacity //disabled={!isPressable} 
+      style={[styles.container, //{ opacity: isPressable ? 1 : 0.5 }
+        ]}
+    >
+      <View>
+        <Text style={styles.itemName}>{item_name}</Text>
+        <Text style={styles.itemSeller}>@{item_seller}</Text>
+      </View>
+      <Text style={styles.price}>${item_price.toFixed(2)}</Text>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    elevation: 2, // for Android shadow
-    shadowColor: '#000', // for iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
+    paddingHorizontal: responsiveWidth(5),
+    paddingVertical: responsiveHeight(3),
+    width: responsiveWidth(80),
+    backgroundColor: 'white',
+    flexDirection: "row",
+    marginVertical: responsiveHeight(1),
+    justifyContent: "space-between",
+    borderRadius: 10,
   },
   price: {
-    fontSize: 16,
-    color: '#4CAF50',
-    marginBottom: 4,
+    fontSize: RFValue(20),
+    fontWeight: "bold",
+    color: "green"
   },
-  desc: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
+  itemName: {
+    fontSize: RFValue(20),
   },
-  seller: {
-    fontSize: 12,
-    color: '#999',
-  },
+  itemSeller: {
+    fontStyle: "italic",
+    color: "#1a81e5",
+    fontSize: RFValue(10)
+  }
+
+
 });
 
 export default Item;

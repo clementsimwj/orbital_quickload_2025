@@ -49,7 +49,7 @@ class ItemCreate(ItemBase):
 
 class Item(ItemBase):
     item_id: int
-    item_seller: str
+    item_seller: int
     
     class Config:
         orm_mode = True

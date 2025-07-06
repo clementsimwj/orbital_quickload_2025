@@ -17,7 +17,7 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
 #View all items
-@router.get("/items", response_model=list[schemas.Item])
+@router.get("/items")
 async def get_items(user: user_dependency, 
                     db: AsyncSession = Depends(get_db)):
     if user is None:
@@ -31,11 +31,15 @@ async def get_items(user: user_dependency,
             "item_name": item.item_name,
             "item_desc": item.item_desc,
             "item_price": item.item_price,
-            "item_seller": item.user.telegram_handle
+            "item_seller": item.user.telegram_handle,
+            "item_sellerId": item.item_seller
         }
         for item in items
     ]
-    return response
+    return {
+        "User" : user,
+        "Items": response
+    }
 
 #Add Item
 @router.post("/add_item", response_model=schemas.Item, status_code=status.HTTP_201_CREATED)
@@ -45,6 +49,8 @@ async def add_item(item: schemas.ItemCreate,
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
+    print(item)
+    print(user)
     stmt = insert(models.Item).values(
         item_name=item.item_name,
         item_price=item.item_price,
