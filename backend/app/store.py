@@ -62,10 +62,8 @@ async def get_item(item_id: int,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
     query = text("""SELECT * FROM items 
-                    WHERE item_id = :item_id
-                    AND item_seller = :item_seller""")
-    result = await db.execute(query, {"item_id": item_id,
-                                      "item_seller": user["user_id"]})
+                    WHERE item_id = :item_id""")
+    result = await db.execute(query, {"item_id": item_id})
     item = result.fetchone()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not Found or You are not the Seller")
@@ -121,6 +119,7 @@ class ItemUpdate(BaseModel):
     item_name: str | None = None
     item_price: float | None = None
     item_desc: str | None = None
+    
 #Update Item
 @router.patch("/{item_id}", response_model=schemas.Item)
 async def update_item(

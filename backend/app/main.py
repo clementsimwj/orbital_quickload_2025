@@ -11,7 +11,7 @@ from store import router as store_router
 from database import schemas
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from configurations import get_db, create_tables
+from configurations import get_db, create_tables, async_session
 from auth import get_current_user
 import os
 import requests
@@ -178,20 +178,22 @@ async def collect_machine(machine_id: int,
 
 async def machine_complete_updater(machine_id: int, delay_minutes: int, db: AsyncSession):
     await asyncio.sleep(delay_minutes * 60)
-    query = text("UPDATE machines SET status = 'complete' WHERE machine_id = :machine_id")
-    await db.execute(query, {"machine_id": machine_id})
-    await db.commit()
+    async with async_session() as db:
+        # mark machine as complete
+        query = text("UPDATE machines SET status = 'complete' WHERE machine_id = :machine_id")
+        await db.execute(query, {"machine_id": machine_id})
+        await db.commit()
 
-    result = await db.execute(
-        text("SELECT telegram_id FROM notifications WHERE machine_id = :machine_id AND done = false"),
-        {"machine_id": machine_id}
-    )
-    row = result.fetchone()
-    if row:
-        chat_id = row.telegram_id
-        print(chat_id)
-        await send_telegram_message(chat_id, f"✅ Your laundry on machine {machine_id} is complete!")
-
+        # get telegram id
+        result = await db.execute(
+            text("SELECT telegram_id FROM notifications WHERE machine_id = :machine_id AND done = false"),
+            {"machine_id": machine_id}
+        )
+        row = result.fetchone()
+        if row:
+            chat_id = row.telegram_id
+            print(chat_id)
+            await send_telegram_message(chat_id, f"✅ Your laundry on machine {machine_id} is complete!")
 async def send_telegram_message(chat_id: str, message: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
