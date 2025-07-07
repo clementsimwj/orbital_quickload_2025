@@ -54,21 +54,29 @@ async def get_my_items(user: user_dependency, db: AsyncSession = Depends(get_db)
     print(items)
     return items
 
-@router.get("/{item_id}", response_model=schemas.ItemBase)
+@router.get("/{item_id}")
 async def get_item(item_id: int,
                    user: user_dependency,
                    db: AsyncSession = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
-    query = text("""SELECT * FROM items 
-                    WHERE item_id = :item_id""")
-    result = await db.execute(query, {"item_id": item_id})
-    item = result.fetchone()
+    result = await db.execute(select(models.Item)
+                              .options(joinedload(models.Item.user))
+                              .where(models.Item.item_id == item_id))
+    item = result.scalars().first()
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not Found or You are not the Seller")
-    return item
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not Found")
+    response = {
+        "item_id": item.item_id,
+        "item_name": item.item_name,
+        "item_desc": item.item_desc,
+        "item_price": item.item_price,
+        "item_seller": item.user.telegram_handle,
+        "item_sellerId": item.item_seller
+    }
+    print(response)
+    return response
 #Add Item
 @router.post("/add_item", response_model=schemas.Item, status_code=status.HTTP_201_CREATED)
 async def add_item(item: schemas.ItemCreate, 

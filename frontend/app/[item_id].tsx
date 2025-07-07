@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, SafeAreaView, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, SafeAreaView, TextInput, ScrollView } from "react-native";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
@@ -22,9 +22,10 @@ export default function EditPage() {
   const [name, setName] = useState<string>('');
   const [price, setPrice] = useState<string>('');
   const [desc, setDesc] = useState<string>('');
+  const [seller, setSeller] = useState<number | null>(null);
+  const [sellerName, setSellerName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (!item_id) return;
 
@@ -40,6 +41,8 @@ export default function EditPage() {
         setName(itemData.item_name);
         setPrice(itemData.item_price.toString());
         setDesc(itemData.item_desc);
+        setSellerName(itemData.item_seller);
+        setSeller(itemData.item_sellerId);
       } catch (err) {
         console.error(err);
         setError("Failed to load item.");
@@ -89,15 +92,30 @@ export default function EditPage() {
   return (
       <SafeAreaView style={styles.container}>
         <View style={styles.upperWrapper}>
-            <Text style={styles.title}>${Number(price).toFixed(2)}</Text>
+          <Text style={{fontSize: RFValue(12), fontWeight:"bold", marginHorizontal: responsiveWidth(10)}}>Price:</Text>
+          <Text style={styles.title}>${Number(price).toFixed(2)}</Text>
         </View>
         <View style={styles.card}>
-            <Text>{name}</Text>
-            <Text>{desc}</Text>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={{fontStyle: 'italic', color: "blue"}}>By: @{sellerName}</Text>
+            <View style={{
+              height: responsiveHeight(0.2),
+              backgroundColor: '#EF7C00',
+              width: '100%',
+              marginVertical: responsiveHeight(2),
+            }} />
+            <ScrollView>
+              <Text style={styles.desc}>{desc}</Text>
+            </ScrollView>
         </View>
-        <TouchableOpacity onPress={()=>{router.back()}}>
-            <Text>Back</Text>
-        </TouchableOpacity>
+        <View style={{flexDirection:"row", justifyContent:'center'}}>
+          <TouchableOpacity style={styles.button} onPress={()=>{router.back()}}>
+            <Text style={styles.buttonText}>Back</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Deal</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
   );
 }
@@ -108,7 +126,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#003D7C",
   },
   upperWrapper : {
-    width: responsiveWidth(100),
+    alignSelf: "center",
+    width: responsiveWidth(90),
     borderColor: "#EF7C00",
     borderWidth: 4,
     borderRadius: 10,
@@ -127,28 +146,34 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#EF7C00",
     marginHorizontal: responsiveWidth(5),
-    borderRadius: 20,
+    borderRadius: 30,
     paddingVertical: responsiveHeight(2),
-    paddingHorizontal: responsiveWidth(2)
+    paddingHorizontal: responsiveWidth(3),
   },
   buttonText: {
     color: "white",
     fontSize: RFValue(16)
   },
   card : {
-    backgroundColor: "white",
-    flex: 0,
-    alignItems: 'center',
-    paddingBottom: responsiveHeight(15)
-  },
-  input: {
-    backgroundColor: "white",
+    alignSelf: 'center',
     width: responsiveWidth(90),
-    borderWidth: 2,
-    borderColor: '#EF7C00',
-    padding: 10,
+    borderRadius: 10,
+    borderWidth: 3,
+    borderColor: "#EF7C00",
+    marginVertical: responsiveHeight(3),
+    marginHorizontal: responsiveWidth(2),
+    paddingHorizontal: responsiveWidth(10),
+    backgroundColor: "#e9e8e9",
+    flex: 0,
+    alignItems: 'flex-start',
+    paddingBottom: responsiveHeight(5),
   },
-  section : {
-    marginVertical: responsiveHeight(2)
+  name : {
+    color: "black",
+    fontSize: RFValue(30),
+    marginBottom: responsiveHeight(5)
+  },
+  desc : {
+    fontStyle: "italic"
   }
 });

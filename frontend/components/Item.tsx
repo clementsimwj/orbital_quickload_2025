@@ -24,11 +24,13 @@ const Item: React.FC<ItemProps> = ({currentUser, item_id, item_name, item_price,
       style={[styles.container, { opacity: isPressable ? 1 : 0.5 }
         ]}
     >
-      <View>
-        <Text style={styles.itemName}>{item_name}</Text>
+      <View style={styles.leftContent}>
+        <Text style={styles.itemName} numberOfLines={1} ellipsizeMode="tail">{item_name}</Text>
         <Text style={styles.itemSeller}>@{item_seller}</Text>
       </View>
-      <Text style={styles.price}>${item_price.toFixed(2)}</Text>
+      <View style={styles.priceContainer}>
+        <Text style={styles.price}>${item_price.toFixed(2)}</Text>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -56,6 +58,19 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     color: "#1a81e5",
     fontSize: RFValue(10)
+  },
+  leftContent: {
+    flex: 1,
+    flexShrink: 1,
+    marginRight: responsiveWidth(2),
+    justifyContent: "center"
+  },
+  priceContainer : {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: responsiveWidth(20),
+    flexShrink: 0
   }
 
 
