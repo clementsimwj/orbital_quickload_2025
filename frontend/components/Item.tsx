@@ -1,3 +1,4 @@
+import { router, useRouter } from 'expo-router';
 import { sortRoutesWithInitial } from 'expo-router/build/sortRoutes';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
@@ -15,9 +16,11 @@ type ItemProps = {
 };
 
 const Item: React.FC<ItemProps> = ({currentUser, item_id, item_name, item_price, item_desc, item_seller, item_sellerId }) => {
+  const router = useRouter();
   const isPressable = currentUser !== item_sellerId;
   return (
     <TouchableOpacity disabled={!isPressable} 
+      onPress={() => {router.push({pathname: "/[item_id]", params: {item_id: item_id.toString()}});}}
       style={[styles.container, { opacity: isPressable ? 1 : 0.5 }
         ]}
     >

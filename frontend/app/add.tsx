@@ -82,7 +82,7 @@ export default function AddItem() {
     <SafeAreaView style={styles.container}>
       <View style={{ flex: 1, paddingVertical: responsiveHeight(5), paddingHorizontal:responsiveWidth(2) }}>
         <TouchableOpacity onPress={handleCancel} style={{ marginBottom: responsiveHeight(3) }}>
-          <Text style={{ color: "#EF7C00", fontSize: RFValue(12) }}>Cancel</Text>
+          <Text style={{ color: "#EF7C00", fontSize: RFValue(12), fontWeight:'bold' }}>Cancel</Text>
         </TouchableOpacity>
         <View style={{paddingHorizontal: responsiveWidth(3)}}>
           <View style={{marginVertical: responsiveHeight(2)}}>

@@ -51,47 +51,6 @@ export default function EditPage() {
     fetchItem();
   }, [item_id]);
   
-  const handleDiscard = () => {
-    Alert.alert(
-        "Discard Changes",
-        "Are you sure you want to discard? Any changes made will not be saved.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Yes, Discard", style: "destructive", onPress: () => router.back() },
-    ]);
-  }
-
-  const handleSave = () => {
-    if (!name.trim()) {
-        Alert.alert("Input Error", "Item name cannot be empty.");
-        return;
-    }
-
-    if (!price.trim()) {
-        Alert.alert("input Error", "Item price cannot be empty.");
-        return;
-    }
-
-    const parsedPrice = parseFloat(price);
-    if (isNaN(parsedPrice)) {
-        Alert.alert("Input Error", "Item price must be a valid number.");
-        return;
-    }
-    axios.patch(`http://10.0.2.2:8000/store/${item_id}`, {
-        item_name: name,
-        item_price: parseFloat(price),
-        item_desc: desc,
-    }, {
-        headers: { Authorization: `Bearer ${token}`,}
-    }).then(() => {
-        Alert.alert("Success", "Item Updated!");
-        router.back();
-    }).catch(err => {
-        console.error(err);
-        Alert.alert('Error', 'Failed to update Item.');
-    });
-  };
-
 
   if (loading) {
     return (
@@ -105,7 +64,7 @@ export default function EditPage() {
     return (
       <View style={styles.container}>
         <Text style={{ color: "red" }}>{error}</Text>
-        <TouchableOpacity onPress={handleDiscard} style={styles.button}>
+        <TouchableOpacity onPress={()=>{router.back()}} style={styles.button}>
           <Text style={styles.button}>Back</Text>
         </TouchableOpacity>
       </View>
@@ -116,7 +75,7 @@ export default function EditPage() {
     return (
       <View style={styles.container}>
         <Text>No item found.</Text>
-        <TouchableOpacity onPress={handleDiscard} style={styles.button}>
+        <TouchableOpacity onPress={()=>{router.back()}} style={styles.button}>
           <Text style={styles.buttonText}>Back</Text>
         </TouchableOpacity>
       </View>
@@ -130,30 +89,15 @@ export default function EditPage() {
   return (
       <SafeAreaView style={styles.container}>
         <View style={styles.upperWrapper}>
-            <Text style={styles.title}>Editing Item: </Text>
+            <Text style={styles.title}>${Number(price).toFixed(2)}</Text>
         </View>
         <View style={styles.card}>
-            <View style={styles.section}>
-                <Text style={{fontSize: RFValue(12), color: "white", paddingBottom: responsiveHeight(1)}}>Item Name:</Text>
-                <TextInput style={styles.input} value={name} onChangeText={setName} placeholder={name} />
-            </View>
-            <View style={styles.section}>
-                <Text style={{fontSize: RFValue(12), color: "white", paddingBottom: responsiveHeight(1)}}>Price:</Text>
-                <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder={price} keyboardType="numeric"/>
-            </View>
-            <View style={styles.section}>
-                <Text style={{fontSize: RFValue(12), color: "white", paddingBottom: responsiveHeight(1)}}>Item Description:</Text>
-                <TextInput style={styles.input} value={desc} onChangeText={setDesc} placeholder={desc} />
-            </View>
+            <Text>{name}</Text>
+            <Text>{desc}</Text>
         </View>
-        <View style={{flexDirection: "row"}}>
-            <TouchableOpacity style={styles.button}>
-                <Text style={styles.buttonText} onPress={handleDiscard}>Discard</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button}>
-                <Text onPress={handleSave} style={styles.buttonText}>Save Changes</Text>
-            </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={()=>{router.back()}}>
+            <Text>Back</Text>
+        </TouchableOpacity>
       </SafeAreaView>
   );
 }
@@ -162,17 +106,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#003D7C",
-    alignItems: "center"
   },
   upperWrapper : {
-    paddingVertical: responsiveHeight(10),
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: responsiveWidth(12)
+    width: responsiveWidth(100),
+    borderColor: "#EF7C00",
+    borderWidth: 4,
+    borderRadius: 10,
+    marginTop: responsiveHeight(8),
+    paddingVertical: responsiveHeight(5),
+    alignItems: "flex-start",
+    backgroundColor: "#e9e8e9",
   },
   title : {
+    marginHorizontal: responsiveWidth(10),
+    textAlign: 'left',
     color: "#EF7C00",
-    fontSize: RFValue(20),
+    fontSize: RFValue(35),
     fontWeight: "bold"
   },
   button: {
@@ -187,7 +136,9 @@ const styles = StyleSheet.create({
     fontSize: RFValue(16)
   },
   card : {
+    backgroundColor: "white",
     flex: 0,
+    alignItems: 'center',
     paddingBottom: responsiveHeight(15)
   },
   input: {

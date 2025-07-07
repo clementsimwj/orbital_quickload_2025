@@ -26,9 +26,20 @@ const ListingItem: React.FC<Props> = ({item_id, item_name, item_price, item_desc
       { cancelable: true }
     );
   };
+  const confirmSold = () => {
+    Alert.alert(
+      "Sold",
+      "Mark this item as Sold? Note that selling this item will remove it from your listing.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Sold", style: "destructive", onPress: () => onDelete(item_id) },
+      ],
+      { cancelable: true }
+    );
+  }
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity onPress={confirmSold} style={styles.container}>
       <View style={styles.leftContent}>
         <Text style={styles.itemName} numberOfLines={1} ellipsizeMode="tail">
           {item_name}
@@ -45,7 +56,7 @@ const ListingItem: React.FC<Props> = ({item_id, item_name, item_price, item_desc
           <Image style={styles.icon} source={require(deleteImage)} resizeMode="contain" />
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

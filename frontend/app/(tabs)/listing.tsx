@@ -77,7 +77,7 @@ export default function Listing() {
       let intervalId: NodeJS.Timeout;
 
       fetchItems();
-      intervalId = setInterval(fetchItems, 5000);
+      intervalId = setInterval(fetchItems, 10000);
 
       return () => clearInterval(intervalId);
     }, [isAuthenticated, token])
