@@ -18,7 +18,7 @@ import {
 } from "react-native-responsive-dimensions";
 import { RFValue } from "react-native-responsive-fontsize";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Redirect } from "expo-router";
+import { Redirect, useFocusEffect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import MachineData from "@/components/MachineData";
@@ -79,6 +79,7 @@ const fetchMachines = async () => {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
+        console.log(response.data);
         const responseData = response.data;
         setUserId(responseData.user_id);
         const newData = responseData.machines;
@@ -160,12 +161,27 @@ const fetchMachines = async () => {
   }, [isAuthenticated, token]);
 
 //fetch machine every 5 seconds
-useEffect(() => {
+
+useFocusEffect(
+  useCallback(() => {
+    let intervalId: NodeJS.Timeout;
+
+    fetchMachines();
+    intervalId = setInterval(fetchMachines, 5000);
+
+    return () => {
+      clearInterval(intervalId);
+      console.log('Polling stopped ❌');
+    };
+  }, [isAuthenticated, token, selectedResidence])
+);
+
+/*useEffect(() => {
   let intervalId: NodeJS.Timeout;
   fetchMachines();
   intervalId = setInterval(fetchMachines, 5000);
   return () => clearInterval(intervalId);
-}, [isAuthenticated, token, selectedResidence]);
+}, [isAuthenticated, token, selectedResidence]);*/
 
   if (isLoading || loadingUser) {
     return (<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

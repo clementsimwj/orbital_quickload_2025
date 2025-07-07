@@ -17,8 +17,8 @@ type ItemProps = {
 const Item: React.FC<ItemProps> = ({currentUser, item_id, item_name, item_price, item_desc, item_seller, item_sellerId }) => {
   const isPressable = currentUser !== item_sellerId;
   return (
-    <TouchableOpacity //disabled={!isPressable} 
-      style={[styles.container, //{ opacity: isPressable ? 1 : 0.5 }
+    <TouchableOpacity disabled={!isPressable} 
+      style={[styles.container, { opacity: isPressable ? 1 : 0.5 }
         ]}
     >
       <View>

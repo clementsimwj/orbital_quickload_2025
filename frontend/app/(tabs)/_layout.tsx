@@ -23,6 +23,9 @@ export default function TabsLayout() {
         } else if (route.name === "share") {
           iconSource = require("../../assets/images/share.png");
           labelText = "Share";
+        } else if (route.name === "listing") {
+          iconSource = require("../../assets/images/listing.png");
+          labelText = "Listing";
         }
 
         return {

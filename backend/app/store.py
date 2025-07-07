@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, text
 from sqlalchemy.orm import joinedload
 
 from typing import Annotated, List
@@ -40,6 +40,36 @@ async def get_items(user: user_dependency,
         "User" : user,
         "Items": response
     }
+
+#get user listings
+@router.get("/my-items", response_model=List[schemas.Item])
+async def get_my_items(user: user_dependency, db: AsyncSession = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail='Authentication Failed')
+    user_id = user["user_id"]
+    query = text("SELECT * FROM items WHERE item_seller = :seller_id")
+    result = await db.execute(query, {"seller_id": user_id})
+    items = [dict(item) for item in result.mappings().all()]
+    print(items)
+    return items
+
+@router.get("/{item_id}", response_model=schemas.ItemBase)
+async def get_item(item_id: int,
+                   user: user_dependency,
+                   db: AsyncSession = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail='Authentication Failed')
+    query = text("""SELECT * FROM items 
+                    WHERE item_id = :item_id
+                    AND item_seller = :item_seller""")
+    result = await db.execute(query, {"item_id": item_id,
+                                      "item_seller": user["user_id"]})
+    item = result.fetchone()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not Found or You are not the Seller")
+    return item
 
 #Add Item
 @router.post("/add_item", response_model=schemas.Item, status_code=status.HTTP_201_CREATED)
