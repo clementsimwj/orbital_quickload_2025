@@ -36,6 +36,7 @@ async def get_items(user: user_dependency,
         }
         for item in items
     ]
+    print(items)
     return {
         "User" : user,
         "Items": response

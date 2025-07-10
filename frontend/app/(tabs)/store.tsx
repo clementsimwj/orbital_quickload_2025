@@ -39,7 +39,7 @@ export default function Store() {
   const[userId, setUserId] = useState<number | null>(null);
   const router = useRouter();
 
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchItems = async () => {
@@ -52,7 +52,6 @@ export default function Store() {
         const responseData = response.data;
         const itemData = responseData.Items;
         const currUser = responseData.User;
-        console.log(currUser);
         console.log(itemData);
         setItems(itemData);
         setUserId(currUser.user_id);
@@ -128,6 +127,13 @@ export default function Store() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{padding: 16, paddingBottom: responsiveHeight(10)}}
                 ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+                ListEmptyComponent={() => (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                      Hmmm...it looks like the marketplace is empty for now!
+                    </Text>
+                  </View>
+                )}
               />
           )}
       </SafeAreaView>
@@ -191,4 +197,17 @@ fabText: {
   lineHeight: 30,
   fontWeight: 'bold',
 },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: responsiveHeight(20),
+  },
+  emptyText: {
+    fontSize: RFValue(12),
+    color: '#EF7C00',
+    fontStyle: "italic",
+    textAlign: 'center',
+    paddingHorizontal: responsiveWidth(10),
+  },
 });

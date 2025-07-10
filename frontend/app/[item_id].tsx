@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, SafeAreaView, TextInput, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, SafeAreaView, TextInput, ScrollView, Linking } from "react-native";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
@@ -17,7 +17,6 @@ export default function EditPage() {
   const { token, isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
   const { item_id } = useLocalSearchParams();
-
   const [item, setItem] = useState<Item | null>(null);
   const [name, setName] = useState<string>('');
   const [price, setPrice] = useState<string>('');
@@ -26,6 +25,10 @@ export default function EditPage() {
   const [sellerName, setSellerName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+
+
+
   useEffect(() => {
     if (!item_id) return;
 
@@ -67,8 +70,8 @@ export default function EditPage() {
     return (
       <View style={styles.container}>
         <Text style={{ color: "red" }}>{error}</Text>
-        <TouchableOpacity onPress={()=>{router.back()}} style={styles.button}>
-          <Text style={styles.button}>Back</Text>
+        <TouchableOpacity onPress={()=>{router.back()}} style={styles.buttonCancel}>
+          <Text style={styles.buttonCancel}>Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -78,7 +81,7 @@ export default function EditPage() {
     return (
       <View style={styles.container}>
         <Text>No item found.</Text>
-        <TouchableOpacity onPress={()=>{router.back()}} style={styles.button}>
+        <TouchableOpacity onPress={()=>{router.back()}} style={styles.buttonCancel}>
           <Text style={styles.buttonText}>Back</Text>
         </TouchableOpacity>
       </View>
@@ -98,21 +101,24 @@ export default function EditPage() {
         <View style={styles.card}>
             <Text style={styles.name}>{name}</Text>
             <Text style={{fontStyle: 'italic', color: "blue"}}>By: @{sellerName}</Text>
+            <Text style={{fontWeight: 'bold', marginVertical: responsiveHeight(2)}}>Description: </Text>
             <View style={{
               height: responsiveHeight(0.2),
               backgroundColor: '#EF7C00',
               width: '100%',
-              marginVertical: responsiveHeight(2),
+              marginBottom: responsiveHeight(2),
             }} />
             <ScrollView>
               <Text style={styles.desc}>{desc}</Text>
             </ScrollView>
         </View>
         <View style={{flexDirection:"row", justifyContent:'center'}}>
-          <TouchableOpacity style={styles.button} onPress={()=>{router.back()}}>
+          <TouchableOpacity style={styles.buttonCancel} onPress={()=>{router.back()}}>
             <Text style={styles.buttonText}>Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.buttonDeal} onPress={() => {
+            Linking.openURL(`https://t.me/${sellerName}`);
+          }}>
             <Text style={styles.buttonText}>Deal</Text>
           </TouchableOpacity>
         </View>
@@ -143,8 +149,8 @@ const styles = StyleSheet.create({
     fontSize: RFValue(35),
     fontWeight: "bold"
   },
-  button: {
-    backgroundColor: "#EF7C00",
+  buttonCancel: {
+    backgroundColor: "#f05c83",
     marginHorizontal: responsiveWidth(5),
     borderRadius: 30,
     paddingVertical: responsiveHeight(2),
@@ -153,6 +159,13 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontSize: RFValue(16)
+  },
+  buttonDeal: {
+    backgroundColor: "#10a773",
+    marginHorizontal: responsiveWidth(5),
+    borderRadius: 30,
+    paddingVertical: responsiveHeight(2),
+    paddingHorizontal: responsiveWidth(3),
   },
   card : {
     alignSelf: 'center',
@@ -169,6 +182,7 @@ const styles = StyleSheet.create({
     paddingBottom: responsiveHeight(5),
   },
   name : {
+    marginTop: responsiveHeight(2),
     color: "black",
     fontSize: RFValue(30),
     marginBottom: responsiveHeight(5)

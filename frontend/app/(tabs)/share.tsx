@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import KeyboardAvoidingContatiner from "@/components/KeyboardAvoidingContainer";
 import { useAuth } from '@/context/AuthContext'
+import Dropdown from "@/components/Dropdown";
 
 
 export default function Share() {
@@ -34,6 +35,24 @@ export default function Share() {
     }
   }
   const router = useRouter();
+
+  const items = [
+  { value : 0, label: "Ridge View Residential College"},
+  { value : 1, label: "Residential College 4"},
+  { value : 2, label: "Tembusu College"},
+  { value : 3, label: "College of Alice and Peter Tan"},
+  { value : 4, label: "Acacia College"},
+];
+
+  const [selectedResidenceName, setSelectedResidenceName] = useState<string | null>(null);
+  const [selectedResidence, setSelectedResidence] = useState<number>();
+
+  const handleSelect = (item: any) => {
+    console.log("Selected: ", item)
+    setSelectedResidence(item.value);
+    setSelectedResidenceName(item.label);
+  };
+
   return (
     <KeyboardAvoidingContatiner>
       <SafeAreaView style={styles.container}>
@@ -46,6 +65,15 @@ export default function Share() {
           <Text style={styles.title}>Share your Load:</Text>
         </View>
         <View style={styles.lowerWrapper}>
+          <View style={{alignItems: 'flex-start', justifyContent: 'center', marginVertical: responsiveHeight(2)}}>
+            <Text style={{marginBottom: responsiveHeight(1), fontSize: RFValue(15), color: "#c8cac9"}}>Residence:</Text>
+            <Dropdown label="Select your Residences: "
+                    items = {items}
+                    onSelect={handleSelect}/>
+          </View>
+          <TouchableOpacity style={styles.button}>
+            <Image style={{width: responsiveWidth(20), height: responsiveHeight(12)}} source={require('../../assets/images/shareLoad.png')} resizeMode="contain"/>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </KeyboardAvoidingContatiner>
@@ -77,9 +105,21 @@ const styles = StyleSheet.create({
     height: responsiveHeight(20),
   },
   lowerWrapper: {
-    marginVertical: responsiveHeight(10),
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: responsiveWidth(5),
   },
+  button: {
+    paddingHorizontal: responsiveWidth(2),
+    borderRadius: 50,
+    flex: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#EF7C00",
+      elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  }
 });
