@@ -8,7 +8,7 @@ class User(BaseModel):
     session: str | None = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class MachineTypeEnum(str, Enum):
     washer = "washing_machine"
@@ -28,7 +28,7 @@ class MachineOut(BaseModel):
     time_remaining: Optional[int] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TimerStart(BaseModel):
     duration: int #in minutes
@@ -52,4 +52,4 @@ class Item(ItemBase):
     item_seller: int
     
     class Config:
-        orm_mode = True
+        from_attributes = True
