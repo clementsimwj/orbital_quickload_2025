@@ -1,10 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, SafeAreaView, TextInput, ScrollView, Linking } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  SafeAreaView,
+  TextInput,
+  ScrollView,
+  Linking,
+} from "react-native";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
-import { responsiveHeight, responsiveWidth } from "react-native-responsive-dimensions";
+import {
+  responsiveHeight,
+  responsiveWidth,
+} from "react-native-responsive-dimensions";
 import { RFValue } from "react-native-responsive-fontsize";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 interface Item {
   item_id: number;
@@ -18,16 +34,13 @@ export default function EditPage() {
   const router = useRouter();
   const { item_id } = useLocalSearchParams();
   const [item, setItem] = useState<Item | null>(null);
-  const [name, setName] = useState<string>('');
-  const [price, setPrice] = useState<string>('');
-  const [desc, setDesc] = useState<string>('');
+  const [name, setName] = useState<string>("");
+  const [price, setPrice] = useState<string>("");
+  const [desc, setDesc] = useState<string>("");
   const [seller, setSeller] = useState<number | null>(null);
-  const [sellerName, setSellerName] = useState<string>('');
+  const [sellerName, setSellerName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-
-
 
   useEffect(() => {
     if (!item_id) return;
@@ -36,7 +49,7 @@ export default function EditPage() {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get(`http://10.0.2.2:8000/store/${item_id}`, {
+        const response = await axios.get(`${API_URL}/store/${item_id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const itemData = response.data;
@@ -56,7 +69,6 @@ export default function EditPage() {
 
     fetchItem();
   }, [item_id]);
-  
 
   if (loading) {
     return (
@@ -70,7 +82,12 @@ export default function EditPage() {
     return (
       <View style={styles.container}>
         <Text style={{ color: "red" }}>{error}</Text>
-        <TouchableOpacity onPress={()=>{router.back()}} style={styles.buttonCancel}>
+        <TouchableOpacity
+          onPress={() => {
+            router.back();
+          }}
+          style={styles.buttonCancel}
+        >
           <Text style={styles.buttonCancel}>Back</Text>
         </TouchableOpacity>
       </View>
@@ -81,48 +98,77 @@ export default function EditPage() {
     return (
       <View style={styles.container}>
         <Text>No item found.</Text>
-        <TouchableOpacity onPress={()=>{router.back()}} style={styles.buttonCancel}>
+        <TouchableOpacity
+          onPress={() => {
+            router.back();
+          }}
+          style={styles.buttonCancel}
+        >
           <Text style={styles.buttonText}>Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  
+
   if (!isAuthenticated) {
     return <Redirect href="/login" />;
-    }
+  }
 
   return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.upperWrapper}>
-          <Text style={{fontSize: RFValue(12), fontWeight:"bold", marginHorizontal: responsiveWidth(10)}}>Price:</Text>
-          <Text style={styles.title}>${Number(price).toFixed(2)}</Text>
-        </View>
-        <View style={styles.card}>
-            <Text style={styles.name}>{name}</Text>
-            <Text style={{fontStyle: 'italic', color: "blue"}}>By: @{sellerName}</Text>
-            <Text style={{fontWeight: 'bold', marginVertical: responsiveHeight(2)}}>Description: </Text>
-            <View style={{
-              height: responsiveHeight(0.2),
-              backgroundColor: '#EF7C00',
-              width: '100%',
-              marginBottom: responsiveHeight(2),
-            }} />
-            <ScrollView>
-              <Text style={styles.desc}>{desc}</Text>
-            </ScrollView>
-        </View>
-        <View style={{flexDirection:"row", justifyContent:'center'}}>
-          <TouchableOpacity style={styles.buttonCancel} onPress={()=>{router.back()}}>
-            <Text style={styles.buttonText}>Back</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.buttonDeal} onPress={() => {
+    <SafeAreaView style={styles.container}>
+      <View style={styles.upperWrapper}>
+        <Text
+          style={{
+            fontSize: RFValue(12),
+            fontWeight: "bold",
+            marginHorizontal: responsiveWidth(10),
+          }}
+        >
+          Price:
+        </Text>
+        <Text style={styles.title}>${Number(price).toFixed(2)}</Text>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.name}>{name}</Text>
+        <Text style={{ fontStyle: "italic", color: "blue" }}>
+          By: @{sellerName}
+        </Text>
+        <Text
+          style={{ fontWeight: "bold", marginVertical: responsiveHeight(2) }}
+        >
+          Description:{" "}
+        </Text>
+        <View
+          style={{
+            height: responsiveHeight(0.2),
+            backgroundColor: "#EF7C00",
+            width: "100%",
+            marginBottom: responsiveHeight(2),
+          }}
+        />
+        <ScrollView>
+          <Text style={styles.desc}>{desc}</Text>
+        </ScrollView>
+      </View>
+      <View style={{ flexDirection: "row", justifyContent: "center" }}>
+        <TouchableOpacity
+          style={styles.buttonCancel}
+          onPress={() => {
+            router.back();
+          }}
+        >
+          <Text style={styles.buttonText}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.buttonDeal}
+          onPress={() => {
             Linking.openURL(`https://t.me/${sellerName}`);
-          }}>
-            <Text style={styles.buttonText}>Deal</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+          }}
+        >
+          <Text style={styles.buttonText}>Deal</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -131,7 +177,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#003D7C",
   },
-  upperWrapper : {
+  upperWrapper: {
     alignSelf: "center",
     width: responsiveWidth(90),
     borderColor: "#EF7C00",
@@ -142,12 +188,12 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     backgroundColor: "#e9e8e9",
   },
-  title : {
+  title: {
     marginHorizontal: responsiveWidth(10),
-    textAlign: 'left',
+    textAlign: "left",
     color: "#EF7C00",
     fontSize: RFValue(35),
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   buttonCancel: {
     backgroundColor: "#f05c83",
@@ -158,7 +204,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: RFValue(16)
+    fontSize: RFValue(16),
   },
   buttonDeal: {
     backgroundColor: "#10a773",
@@ -167,8 +213,8 @@ const styles = StyleSheet.create({
     paddingVertical: responsiveHeight(2),
     paddingHorizontal: responsiveWidth(3),
   },
-  card : {
-    alignSelf: 'center',
+  card: {
+    alignSelf: "center",
     width: responsiveWidth(90),
     borderRadius: 10,
     borderWidth: 3,
@@ -178,16 +224,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: responsiveWidth(10),
     backgroundColor: "#e9e8e9",
     flex: 0,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
     paddingBottom: responsiveHeight(5),
   },
-  name : {
+  name: {
     marginTop: responsiveHeight(2),
     color: "black",
     fontSize: RFValue(30),
-    marginBottom: responsiveHeight(5)
+    marginBottom: responsiveHeight(5),
   },
-  desc : {
-    fontStyle: "italic"
-  }
+  desc: {
+    fontStyle: "italic",
+  },
 });

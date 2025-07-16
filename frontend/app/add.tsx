@@ -8,11 +8,16 @@ import {
   Alert,
 } from "react-native";
 import { RFValue } from "react-native-responsive-fontsize";
-import { responsiveHeight, responsiveWidth } from "react-native-responsive-dimensions";
+import {
+  responsiveHeight,
+  responsiveWidth,
+} from "react-native-responsive-dimensions";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function AddItem() {
   const { token, logout, isAuthenticated, isLoading } = useAuth();
@@ -22,25 +27,25 @@ export default function AddItem() {
   const [itemSeller, setItemSeller] = useState<string>("");
 
   const handleCancel = () => {
-  const hasChanges = itemName.trim() || itemPrice.trim() || itemDesc.trim();
+    const hasChanges = itemName.trim() || itemPrice.trim() || itemDesc.trim();
 
-  if (hasChanges) {
-    Alert.alert(
-      "Discard changes?",
-      "Are you sure you want to discard your changes?",
-      [
-        { text: "Keep Editing", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => router.back(),
-        },
-      ]
-    );
-  } else {
-    router.back();
-  }
-};
+    if (hasChanges) {
+      Alert.alert(
+        "Discard changes?",
+        "Are you sure you want to discard your changes?",
+        [
+          { text: "Keep Editing", style: "cancel" },
+          {
+            text: "Discard",
+            style: "destructive",
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    } else {
+      router.back();
+    }
+  };
 
   const handleSubmit = async () => {
     console.log(itemName);
@@ -62,30 +67,48 @@ export default function AddItem() {
 
     console.log(newItem);
     //Send newItem to backend
-    axios.post("http://10.0.2.2:8000/store/add_item", newItem, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then((res) => {
-      console.log(res.data);
-      Alert.alert("Success", "Item added!");
-      router.back();
-    })
-    .catch((err) => {
-      console.error(err.response?.data || err.message);
-      Alert.alert("Error", "Could not add item.");
-    });
+    axios
+      .post(`${API_URL}/store/add_item`, newItem, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => {
+        console.log(res.data);
+        Alert.alert("Success", "Item added!");
+        router.back();
+      })
+      .catch((err) => {
+        console.error(err.response?.data || err.message);
+        Alert.alert("Error", "Could not add item.");
+      });
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={{ flex: 1, paddingVertical: responsiveHeight(5), paddingHorizontal:responsiveWidth(2) }}>
-        <TouchableOpacity onPress={handleCancel} style={{ marginBottom: responsiveHeight(3) }}>
-          <Text style={{ color: "#EF7C00", fontSize: RFValue(12), fontWeight:'bold' }}>Cancel</Text>
+      <View
+        style={{
+          flex: 1,
+          paddingVertical: responsiveHeight(5),
+          paddingHorizontal: responsiveWidth(2),
+        }}
+      >
+        <TouchableOpacity
+          onPress={handleCancel}
+          style={{ marginBottom: responsiveHeight(3) }}
+        >
+          <Text
+            style={{
+              color: "#EF7C00",
+              fontSize: RFValue(12),
+              fontWeight: "bold",
+            }}
+          >
+            Cancel
+          </Text>
         </TouchableOpacity>
-        <View style={{paddingHorizontal: responsiveWidth(3)}}>
-          <View style={{marginVertical: responsiveHeight(2)}}>
+        <View style={{ paddingHorizontal: responsiveWidth(3) }}>
+          <View style={{ marginVertical: responsiveHeight(2) }}>
             <Text style={styles.label}>Item Name:</Text>
             <TextInput
               style={styles.input}
@@ -94,7 +117,7 @@ export default function AddItem() {
               onChangeText={setItemName}
             />
           </View>
-          <View style={{marginVertical: responsiveHeight(2)}}>
+          <View style={{ marginVertical: responsiveHeight(2) }}>
             <Text style={styles.label}>Item Price:</Text>
             <TextInput
               style={styles.input}
@@ -104,7 +127,7 @@ export default function AddItem() {
               onChangeText={setItemPrice}
             />
           </View>
-          <View style={{marginVertical: responsiveHeight(2)}}>
+          <View style={{ marginVertical: responsiveHeight(2) }}>
             <Text style={styles.label}>Item Description:</Text>
             <TextInput
               style={[styles.input, { height: 80 }]}

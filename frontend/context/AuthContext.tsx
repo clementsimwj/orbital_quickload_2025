@@ -3,6 +3,8 @@ import * as SecureStore from "expo-secure-store";
 import { Text, SafeAreaView, Alert } from "react-native";
 import axios from "axios";
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
 type AuthContextType = {
   token: string | null;
   login: (username: string, password: string) => Promise<boolean>;
@@ -16,7 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   logout: () => {},
   isAuthenticated: false,
-  isLoading: true
+  isLoading: true,
 });
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -47,11 +49,11 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       params.append("username", username);
       params.append("password", password);
       const response = await axios.post(
-        `http://10.0.2.2:8000/auth/login`,
+        `${API_URL}/auth/login`,
         params.toString(),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
-      const {access_token} = response.data;
+      const { access_token } = response.data;
       await SecureStore.setItemAsync("access_token", access_token);
       setToken(access_token);
       return true;
@@ -59,7 +61,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       let message = "Unknown error";
       if (axios.isAxiosError(error)) {
         message = error.response?.data?.detail || error.message;
-        console.log(error)
+        console.log(error);
       } else if (error instanceof Error) {
         message = error.message;
       }
@@ -74,9 +76,11 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const isAuthenticated = !!token;
-  console.log('isAuthenticated: ' + isAuthenticated);
+  console.log("isAuthenticated: " + isAuthenticated);
   return (
-    <AuthContext.Provider value={{ token, login, logout, isAuthenticated, isLoading}}>
+    <AuthContext.Provider
+      value={{ token, login, logout, isAuthenticated, isLoading }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -85,7 +89,5 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 const useAuth = () => {
   return useContext(AuthContext);
 };
-
-
 
 export { useAuth, AuthContext, AuthProvider };
