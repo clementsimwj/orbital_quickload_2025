@@ -53,3 +53,8 @@ class Item(ItemBase):
     
     class Config:
         from_attributes = True
+
+class CreateLoad(BaseModel):
+    machine: int
+    capacity: int
+    notes: str

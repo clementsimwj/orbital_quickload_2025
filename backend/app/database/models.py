@@ -12,16 +12,8 @@ class User(Base):
     session = Column(String(255), nullable=False)
 
     items = relationship("Item", back_populates="user")
-    given_shares = relationship(
-        "Share",
-        foreign_keys="Share.user_share",
-        back_populates="giver"
-    )
-    received_shares = relationship(
-        "Share",
-        foreign_keys="Share.user_receive",
-        back_populates="receiver"
-    )
+    shares = relationship("Share", back_populates = "giver")
+    shares_users = relationship("ShareUser", back_populates = "receiver")
 
 class Residence(Base):
     __tablename__ = 'residences'
@@ -48,6 +40,7 @@ class Machine(Base):
     residence_id = Column(Integer, ForeignKey("residences.residence_id"))
 
     residence = relationship("Residence", backref="machines")
+    shares = relationship("Share", back_populates = "machine")
 
 class Notification(Base):
     __tablename__ = "notifications"
@@ -76,21 +69,22 @@ class Item(Base):
 class Share(Base):
     __tablename__ = "shares"
 
-    share_id = Column(BigInteger, primary_key=True, index=True)
-    time_start = Column(DateTime, nullable=False)
-    time_end = Column(DateTime, nullable=False)
-    user_share = Column(BigInteger, ForeignKey("users.telegram_id"), nullable=False)
-    user_receive = Column(BigInteger, ForeignKey("users.telegram_id"), nullable=True)
-    machine_id = Column(BigInteger, ForeignKey("machines.machine_id"), nullable=True)
+    share_id = Column(BigInteger, primary_key = True, index = True)
+    user_creator = Column(BigInteger, ForeignKey("users.telegram_id"), nullable = False)
+    laundry_notes = Column(String, nullable = False)
+    machine_id = Column(BigInteger, ForeignKey("machines.machine_id"), nullable = False)
+    capacity = Column(Integer, nullable = False)
 
-    giver = relationship(
-        "User",
-        foreign_keys=[user_share],
-        back_populates="given_shares"
-    )
-    receiver = relationship(
-        "User",
-        foreign_keys=[user_receive],
-        back_populates="received_shares"
-    )
-    machine = relationship("Machine", backref="shares")
+    giver = relationship("User", back_populates = "shares")
+    machine = relationship("Machine", back_populates = "shares")
+    shares_users = relationship("ShareUser", back_populates = "share")
+
+class ShareUser(Base):
+    __tablename__ = "shares_users"
+
+    share_user_id = Column(BigInteger, primary_key = True, index = True)
+    share_id = Column(BigInteger, ForeignKey("shares.share_id"), nullable = False)
+    user_id = Column(BigInteger, ForeignKey("users.telegram_id"), nullable = False)
+
+    share = relationship("Share", back_populates = "shares_users")
+    receiver = relationship("User", back_populates = "shares_users")

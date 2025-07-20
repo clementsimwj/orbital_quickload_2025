@@ -14,7 +14,7 @@ import {
   responsiveHeight,
   responsiveWidth,
 } from "react-native-responsive-dimensions";
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { RFValue } from "react-native-responsive-fontsize";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,13 +29,13 @@ interface ShareLoad {
   user: string;
   residence: string;
   machine: string;
-  loadDuration: string;
+  capacity: number;
   notes: string;
 }
 
 interface Residence {
-  residence_id: number;
-  residence_name: string;
+  value: number;
+  label: string;
 }
 
 interface Machine {
@@ -44,57 +44,56 @@ interface Machine {
 }
 
 export default function Share() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [userData, setUserData] = useState<String | null>(null);
-  const { login, token, isAuthenticated } = useAuth();
-  const handleLogin = async () => {
-    const success = await login(username, password);
-    if (success) {
-      router.replace("/");
-    } else {
-      Alert.alert("Login Failed", "Invalid Credentials");
-    }
-  };
-  const router = useRouter();
+  const { token, isAuthenticated } = useAuth();
 
-  //const [residences, setResidences] = useState<Residence[]>([]);
-
-  const residences = [
-    { value: 0, label: "Ridge View Residential College" },
-    { value: 1, label: "Residential College 4" },
-    { value: 2, label: "Tembusu College" },
-    { value: 3, label: "College of Alice and Peter Tan" },
-    { value: 4, label: "Acacia College" },
-  ];
+  if (!isAuthenticated) {
+    return <Redirect href="/login" />;
+  }
 
   const [selectedResidenceName, setSelectedResidenceName] = useState<
     string | null
   >(null);
   const [selectedResidence, setSelectedResidence] = useState<number>();
 
-  const handleSelect = (item: any) => {
+  useEffect(() => {
+    if (selectedResidenceName) {
+      console.log("Residence has been updated to:", selectedResidenceName);
+      axios
+        .get(`${API_URL}/share/${selectedResidence}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          //console.log(response.data);
+          console.log(
+            "Corresponding machine data has been fetched successfully"
+          );
+          const machineData = response.data.machines;
+          if (!userData) {
+            setUserData(response.data.user_handle);
+          }
+          setMachineList(machineData);
+        })
+        .catch((error) => {
+          Alert.alert("Error", "Failed to fetch machines.");
+          console.error(error);
+        });
+    }
+  }, [selectedResidence]);
+
+  const handleSelectResidence = (item: any) => {
     console.log("Selected: ", item);
     setSelectedResidence(item.value);
     setSelectedResidenceName(item.label);
-    console.log(selectedResidence);
-    axios
-      .get(`${API_URL}/share/${selectedResidence}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        console.log(response.data);
-        const machineData = response.data.machines;
-        if (!userData) {
-          setUserData(response.data.user_handle);
-        }
-        setMachineList(machineData);
-      })
-      .catch((error) => {
-        Alert.alert("Error", "Failed to fetch machines.");
-        console.error(error);
-      });
   };
+
+  const [laundryDetails, setLaundryDetails] = useState("");
+  const [capacity, setCapacity] = useState<number>(2);
+  const [machineList, setMachineList] = useState<Machine[]>([]);
+  const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
+  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
+    null
+  );
 
   const handleSelectMachine = (item: any) => {
     console.log("Selected: ", item);
@@ -106,59 +105,83 @@ export default function Share() {
     "findLoad"
   );
 
-  const [laundryDetails, setLaundryDetails] = useState("");
-  const [duration, setDuration] = useState(30);
-  const [machineList, setMachineList] = useState<Machine[]>([]);
-  const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
-  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
-    null
-  );
+  const [residences, setResidences] = useState<Residence[]>([]);
 
-  const [loads, setLoads] = useState<ShareLoad[]>([
-    {
-      user: "User 1",
-      machine: "Dryer 2",
-      residence: "Ridge View Residential College",
-      loadDuration: "20 mins",
-      notes: "Towels only",
-    },
-    {
-      user: "User 2",
-      machine: "Washer 3",
-      residence: "Ridge View Residential College",
-      loadDuration: "30 mins",
-      notes: "Dark clothes",
-    },
-  ]);
+  const fetchResidences = useCallback(() => {
+    axios
+      .get(`${API_URL}/share/residences`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        //console.log(response.data);
+        console.log("Residences have been fetched");
+        setResidences(response.data);
+      })
+      .catch((error) => {
+        Alert.alert("Error", "Failed to fetch residences.");
+        console.error(error);
+      });
+  }, []);
+
+  useFocusEffect(fetchResidences);
+
+  const [loads, setLoads] = useState<ShareLoad[]>([]);
+
+  const fetchLoads = useCallback(() => {
+    console.log("Fetching SharedLoads...");
+    if (isAuthenticated && token) {
+      axios
+        .get(`${API_URL}/share/shared_loads`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          setLoads(response.data);
+        })
+        .catch((error) => {
+          Alert.alert("Error", "Failed to fetch loads.");
+          console.error(error);
+        })
+        .finally(() => {
+          console.log("Operation ended!");
+        });
+    }
+  }, []);
+
+  useFocusEffect(fetchLoads);
 
   const resetForm = () => {
     setSelectedResidenceName(null);
     setLaundryDetails("");
-    setDuration(30);
+    setCapacity(2);
     setSelectedMachine(null);
   };
 
   const handleCreateLoad = () => {
-    const newLoad = {
-      id: Date.now().toString(),
-      user: `${userData}`,
-      residence: `${selectedResidenceName}`,
-      machine: `${selectedMachine}`,
-      loadDuration: `${duration} mins`,
-      notes: laundryDetails,
-    };
     if (!selectedMachine) {
       Alert.alert("Please select a machine");
     } else if (!selectedResidenceName) {
       Alert.alert("Please select a residence");
-    } else if (!duration) {
-      Alert.alert("Please input a duration");
-    } else if (duration < 5 || duration > 60) {
-      Alert.alert("Please input a valid duration (time between 5 and 60)");
     } else if (laundryDetails == "") {
       Alert.alert("Please input your load details");
     } else {
-      setLoads([newLoad, ...loads]);
+      axios
+        .post(
+          `${API_URL}/share/create_load`,
+          {
+            machine: selectedMachineId,
+            capacity: capacity,
+            notes: laundryDetails,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+        .then((response) => {
+          console.log(response.data.message);
+          fetchLoads();
+        })
+        .catch((error) => Alert.alert("Error", error));
+
       setActiveTab("findLoad");
       resetForm();
     }
@@ -167,10 +190,10 @@ export default function Share() {
   const renderLoadCard = ({ item }: { item: ShareLoad }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.user}</Text>
-      <Text> {item.machine}</Text>
+      <Text>🧺 Machine: {item.machine}</Text>
       <Text>🏠 Residence: {item.residence} </Text>
-      <Text>⏳ Duration: {item.loadDuration}</Text>
-      <Text>🧺 {item.notes}</Text>
+      <Text>👤 Max Participants: {item.capacity}</Text>
+      <Text>📝 Note: {item.notes}</Text>
       <TouchableOpacity style={styles.joinButton}>
         <Text style={styles.joinButtonText}>Join Load</Text>
       </TouchableOpacity>
@@ -235,39 +258,56 @@ export default function Share() {
 
         {/* Tab Content */}
         {activeTab === "findLoad" ? (
-          <FlatList
-            data={loads}
-            renderItem={renderLoadCard}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
+          <>
+            <FlatList
+              data={loads}
+              renderItem={renderLoadCard}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            />
+            <TouchableOpacity
+              style={styles.fab}
+              onPress={() => {
+                fetchResidences();
+                fetchLoads();
+              }}
+            >
+              <Text style={styles.fabText}> ↻ </Text>
+            </TouchableOpacity>
+          </>
         ) : (
-          <ScrollView style={styles.scrollView}>
+          <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
             <View style={styles.form}>
               <Text style={styles.label}>Residence</Text>
               <View style={styles.dropdown}>
                 <Dropdown
                   label="Select your Residence: "
                   items={residences}
-                  onSelect={handleSelect}
+                  onSelect={handleSelectResidence}
                 />
               </View>
               {selectedResidenceName && (
                 <>
                   <Text style={styles.label}>Machine</Text>
-                  <Dropdown
-                    label="Select your Machine: "
-                    items={machineList}
-                    onSelect={handleSelectMachine}
-                  />
+                  <View style={styles.dropdown}>
+                    <Dropdown
+                      label="Select your Machine: "
+                      items={machineList}
+                      onSelect={handleSelectMachine}
+                    />
+                  </View>
                 </>
               )}
 
-              <Text style={styles.label}>Set Duration (minutes)</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                onChangeText={(text) => setDuration(parseInt(text))}
-              />
+              <Text style={styles.label}>
+                Max Participants (Including Yourself){" "}
+              </Text>
+              <View style={styles.dropdown}>
+                <Dropdown
+                  label="2"
+                  items={[{ label: "2" }, { label: "3" }, { label: "4" }]}
+                  onSelect={(item: any) => setCapacity(parseInt(item.label))}
+                />
+              </View>
 
               <Text style={styles.label}>
                 Laundry Notes (Include Preferred Time of Laundry){" "}
@@ -279,7 +319,12 @@ export default function Share() {
                 placeholder="e.g. Towels only, warm wash"
               />
               <View style={styles.createButton}>
-                <Button title="Create Your Load" onPress={handleCreateLoad} />
+                <TouchableOpacity
+                  onPress={handleCreateLoad}
+                  style={styles.joinButton}
+                >
+                  <Text style={styles.joinButtonText}> Create Your Load </Text>
+                </TouchableOpacity>
               </View>
             </View>
           </ScrollView>
@@ -406,5 +451,27 @@ const styles = StyleSheet.create({
   scrollView: {
     flexGrow: 1,
     flex: 1,
+  },
+  fab: {
+    position: "absolute",
+    bottom: responsiveHeight(2.5),
+    right: responsiveWidth(5),
+    backgroundColor: "#EF7C00",
+    width: responsiveWidth(15),
+    height: responsiveHeight(7),
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  fabText: {
+    color: "white",
+    fontSize: RFValue(30),
+    lineHeight: 30,
+    fontWeight: "bold",
   },
 });
