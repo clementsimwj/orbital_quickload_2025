@@ -8,6 +8,7 @@ from typing import Annotated, List
 import auth
 
 from store import router as store_router
+from share import router as share_router
 from database import schemas
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,6 +37,7 @@ app.add_middleware(
 )
 app.include_router(auth.router)
 app.include_router(store_router)
+app.include_router(share_router)
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
 #homepage
@@ -46,7 +48,7 @@ async def user(user: user_dependency):
                             detail='Authentication Failed')
     return {"User": user}
 #Returns 
-#{ "User" : {"user_id": user_id, "user_handle": user_handle}}
+#{ "User" : {"user_id": user_id, "handle": user_handle}}
 
 #/{residence_id} to return all the machines that corresponds to the residence
 @app.get("/{residence_id}", response_model=schemas.MachinesByResidenceOut)

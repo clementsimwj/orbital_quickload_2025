@@ -60,7 +60,7 @@ export default function Store() {
           setUserId(currUser.user_id);
         })
         .catch((error) => {
-          Alert.alert("Error", "Failed to fetch machines.");
+          Alert.alert("Error", "Failed to fetch items.");
           console.error(error);
         })
         .finally(() => {
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   upperWrapper: {
-    paddingVertical: responsiveHeight(5),
+    paddingVertical: responsiveHeight(3),
     paddingHorizontal: responsiveWidth(12),
     flexDirection: "row",
     justifyContent: "center",

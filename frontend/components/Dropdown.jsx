@@ -70,8 +70,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "white",
     paddingHorizontal: responsiveWidth(2),
+    paddingVertical: responsiveWidth(1),
     borderRadius: 10,
     flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#000000ff",
   },
   dropdownList: {
     position: "absolute",
