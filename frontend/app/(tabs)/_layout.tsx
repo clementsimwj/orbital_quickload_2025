@@ -26,21 +26,31 @@ export default function TabsLayout() {
         } else if (route.name === "listing") {
           iconSource = require("../../assets/images/listing.png");
           labelText = "Listing";
+        } else {
+          //need to cover all cases else code will break
+          iconSource = require("../../assets/images/home.png");
+          labelText = "Default";
         }
 
         return {
           tabBarIcon: ({ focused }) => (
             <Image
               source={iconSource}
-              style={{ width: responsiveWidth(7), 
-                    height: responsiveHeight(3),
-                    tintColor: focused ? "#FFFFFF" : "#FFFFFF99" }}
+              style={{
+                width: responsiveWidth(7),
+                height: responsiveHeight(3),
+                tintColor: focused ? "#FFFFFF" : "#FFFFFF99",
+              }}
             />
           ),
           tabBarLabel: ({ focused }) => (
-            <Text style={{ color: focused ? "#FFFFFF" : "#FFFFFF99", 
-                fontWeight: "bold", 
-                fontSize: RFValue(12)}}>
+            <Text
+              style={{
+                color: focused ? "#FFFFFF" : "#FFFFFF99",
+                fontWeight: "bold",
+                fontSize: RFValue(12),
+              }}
+            >
               {labelText}
             </Text>
           ),
