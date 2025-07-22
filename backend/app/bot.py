@@ -40,7 +40,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         async with httpx.AsyncClient() as client:
             res = await client.post(
-                "https://orbital-quickload-2025.onrender.com/auth/register",
+                f"{API_URL}/auth/register",
                 json={"user_id": user_id, "handle": handle, "password": password}
             )
             data = res.json()
@@ -70,7 +70,7 @@ async def change_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         async with httpx.AsyncClient() as client:
             res = await client.post(
-                "https://orbital-quickload-2025.onrender.com/auth/change-password",
+                f"{API_URL}/auth/change-password",
                 json={"user_id": user_id, "handle": handle, "new_password": new_password}
             )
             data = res.json()
@@ -95,7 +95,7 @@ async def update_handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         async with httpx.AsyncClient() as client:
             res = await client.post(
-                "https://orbital-quickload-2025.onrender.com/auth/update",
+                f"{API_URL}/auth/update",
                 json={"user_id": user_id, "new_handle": handle}
             )
             data = res.json()

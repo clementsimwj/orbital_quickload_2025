@@ -18,6 +18,8 @@ import os
 import requests
 from dotenv import load_dotenv
 
+from util import machine_complete_updater
+
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("BOT_TOKEN")
 
@@ -82,10 +84,13 @@ async def get_machines_by_residence(residence_id: int,
             notif = notif_result.mappings().first()
             if notif:
                 time_end = notif['time_end']
-                now = datetime.now()  # naive if your DB stores naive timestamps
+                now = datetime.now(timezone(timedelta(hours=8)))  # naive if your DB stores naive timestamps
+                time_end = time_end.replace(tzinfo = timezone(timedelta(hours=8)))
 
                 remaining_seconds = (time_end - now).total_seconds()
+                print(remaining_seconds)
                 if remaining_seconds < 0:
+                    asyncio.create_task(machine_complete_updater(machine["machine_id"], 0, db))
                     remaining_seconds = 0  # clamp to zero if overdue
 
                 machine['time_remaining'] = int(remaining_seconds)
@@ -176,31 +181,3 @@ async def collect_machine(machine_id: int,
     await db.commit()
 
     return {"message": "Machine status updated to available"}
-
-
-async def machine_complete_updater(machine_id: int, delay_minutes: int, db: AsyncSession):
-    await asyncio.sleep(delay_minutes * 60)
-    async with async_session() as db:
-        # mark machine as complete
-        query = text("UPDATE machines SET status = 'complete' WHERE machine_id = :machine_id")
-        await db.execute(query, {"machine_id": machine_id})
-        await db.commit()
-
-        # get telegram id
-        result = await db.execute(
-            text("SELECT telegram_id FROM notifications WHERE machine_id = :machine_id AND done = false"),
-            {"machine_id": machine_id}
-        )
-        row = result.fetchone()
-        if row:
-            chat_id = row.telegram_id
-            print(chat_id)
-            await send_telegram_message(chat_id, f"✅ Your laundry on machine {machine_id} is complete!")
-async def send_telegram_message(chat_id: str, message: str):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": message
-    }
-    async with httpx.AsyncClient() as client:
-        await client.post(url, data=payload)

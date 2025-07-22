@@ -51,9 +51,11 @@ class Notification(Base):
     machine_id = Column(Integer, ForeignKey("machines.machine_id"), nullable=False)
     telegram_id = Column(BigInteger, ForeignKey("users.telegram_id"), nullable=False)
     done = Column(Boolean, nullable=False, default=False)
+    share_id = Column(BigInteger, ForeignKey("shares.share_id"), unique=True)
 
     machine = relationship("Machine", backref="notifications")
     user = relationship("User", backref="notifications")
+    share = relationship("Share", back_populates="notifications")
 
 class Item(Base):
     __tablename__ = "items"
@@ -74,10 +76,12 @@ class Share(Base):
     laundry_notes = Column(String, nullable = False)
     machine_id = Column(BigInteger, ForeignKey("machines.machine_id"), nullable = False)
     capacity = Column(Integer, nullable = False)
+    started = Column(Boolean, nullable = False, default = False)
 
     giver = relationship("User", back_populates = "shares")
     machine = relationship("Machine", back_populates = "shares")
     shares_users = relationship("ShareUser", back_populates = "share")
+    notifications = relationship("Notification", back_populates="share")
 
 class ShareUser(Base):
     __tablename__ = "shares_users"

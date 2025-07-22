@@ -26,11 +26,13 @@ import Dropdown from "@/components/Dropdown";
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 interface ShareLoad {
+  share_id: number;
   user: string;
   residence: string;
   machine: string;
   capacity: number;
   notes: string;
+  participants: number[];
 }
 
 interface Residence {
@@ -46,21 +48,40 @@ interface Machine {
 export default function Share() {
   const [userData, setUserData] = useState<String | null>(null);
   const { token, isAuthenticated } = useAuth();
+  const [userId, setUserId] = useState<number>(0);
 
-  if (!isAuthenticated) {
-    return <Redirect href="/login" />;
-  }
+  // list of available residences for selection
+  const [residences, setResidences] = useState<Residence[]>([]);
 
+  // sets the residence for the create a load form
   const [selectedResidenceName, setSelectedResidenceName] = useState<
     string | null
   >(null);
   const [selectedResidence, setSelectedResidence] = useState<number>();
 
+  // all the states for the create a load details
+  const [laundryDetails, setLaundryDetails] = useState("");
+  const [capacity, setCapacity] = useState<number>(2);
+  const [machineList, setMachineList] = useState<Machine[]>([]);
+  const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
+  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
+    null
+  );
+
+  // current active tab
+  const [activeTab, setActiveTab] = useState<"findLoad" | "createLoad">(
+    "findLoad"
+  );
+
+  // all the shared loads created, to be fill with data from database
+  const [loads, setLoads] = useState<ShareLoad[]>([]);
+
+  // gets the corresponding machines based on the selected residence
   useEffect(() => {
     if (selectedResidenceName) {
       console.log("Residence has been updated to:", selectedResidenceName);
       axios
-        .get(`${API_URL}/share/${selectedResidence}`, {
+        .get(`${API_URL}/share/residence/${selectedResidence}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((response) => {
@@ -69,9 +90,6 @@ export default function Share() {
             "Corresponding machine data has been fetched successfully"
           );
           const machineData = response.data.machines;
-          if (!userData) {
-            setUserData(response.data.user_handle);
-          }
           setMachineList(machineData);
         })
         .catch((error) => {
@@ -81,31 +99,19 @@ export default function Share() {
     }
   }, [selectedResidence]);
 
+  // used in the residence dropdown for create a load
   const handleSelectResidence = (item: any) => {
     console.log("Selected: ", item);
     setSelectedResidence(item.value);
     setSelectedResidenceName(item.label);
   };
 
-  const [laundryDetails, setLaundryDetails] = useState("");
-  const [capacity, setCapacity] = useState<number>(2);
-  const [machineList, setMachineList] = useState<Machine[]>([]);
-  const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
-  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
-    null
-  );
-
+  // used in the machine dropdown for create a load
   const handleSelectMachine = (item: any) => {
     console.log("Selected: ", item);
     setSelectedMachine(item.label);
     setSelectedMachineId(item.value);
   };
-
-  const [activeTab, setActiveTab] = useState<"findLoad" | "createLoad">(
-    "findLoad"
-  );
-
-  const [residences, setResidences] = useState<Residence[]>([]);
 
   const fetchResidences = useCallback(() => {
     axios
@@ -123,10 +129,6 @@ export default function Share() {
       });
   }, []);
 
-  useFocusEffect(fetchResidences);
-
-  const [loads, setLoads] = useState<ShareLoad[]>([]);
-
   const fetchLoads = useCallback(() => {
     console.log("Fetching SharedLoads...");
     if (isAuthenticated && token) {
@@ -135,19 +137,18 @@ export default function Share() {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((response) => {
-          setLoads(response.data);
+          setLoads(response.data.loads);
+          if (!userData) {
+            setUserData(response.data.user_handle);
+            setUserId(response.data.user_id);
+          }
         })
         .catch((error) => {
           Alert.alert("Error", "Failed to fetch loads.");
           console.error(error);
-        })
-        .finally(() => {
-          console.log("Operation ended!");
         });
     }
   }, []);
-
-  useFocusEffect(fetchLoads);
 
   const resetForm = () => {
     setSelectedResidenceName(null);
@@ -187,18 +188,71 @@ export default function Share() {
     }
   };
 
+  const handleJoinLoad = (share_id: number) => {
+    axios
+      .post(`${API_URL}/share/join_load/${share_id}`, null, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        console.log(response.data.message);
+        fetchLoads();
+      })
+      .catch((error) => Alert.alert("Error", error));
+  };
+
+  const handleQuitLoad = (share_id: number) => {
+    axios
+      .post(`${API_URL}/share/quit_load/${share_id}`, null, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        console.log(response.data.message);
+        fetchLoads();
+      })
+      .catch((error) => Alert.alert("Error", error));
+  };
+
+  const handleStartLoad = () => {}; //work on this
+
   const renderLoadCard = ({ item }: { item: ShareLoad }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.user}</Text>
       <Text>🧺 Machine: {item.machine}</Text>
       <Text>🏠 Residence: {item.residence} </Text>
-      <Text>👤 Max Participants: {item.capacity}</Text>
+      <Text>
+        👤 Participants: {item.participants.length + 1} / {item.capacity}
+      </Text>
       <Text>📝 Note: {item.notes}</Text>
-      <TouchableOpacity style={styles.joinButton}>
-        <Text style={styles.joinButtonText}>Join Load</Text>
-      </TouchableOpacity>
+
+      {item.user == userData ? (
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "#12C72F" }]}
+          onPress={() => handleStartLoad()} ////work on start load////////////////////////////////////
+        >
+          <Text style={styles.buttonText}>Start Load</Text>
+        </TouchableOpacity>
+      ) : item.participants.includes(userId) ? (
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "red" }]}
+          onPress={() => handleQuitLoad(item.share_id)}
+        >
+          <Text style={styles.buttonText}>Quit Load</Text>
+        </TouchableOpacity>
+      ) : item.participants.length + 1 == item.capacity ? (
+        <></>
+      ) : (
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => handleJoinLoad(item.share_id)}
+        >
+          <Text style={styles.buttonText}>Join Load</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
+
+  useFocusEffect(fetchResidences);
+  useFocusEffect(fetchLoads);
 
   if (!isAuthenticated) return <Redirect href="/login" />;
 
@@ -259,11 +313,13 @@ export default function Share() {
         {/* Tab Content */}
         {activeTab === "findLoad" ? (
           <>
+            {/* Find Load cards */}
             <FlatList
               data={loads}
               renderItem={renderLoadCard}
               contentContainerStyle={{ paddingBottom: 20 }}
             />
+            {/* Refresh Button fetches all shared loads and list of residences from database */}
             <TouchableOpacity
               style={styles.fab}
               onPress={() => {
@@ -275,6 +331,7 @@ export default function Share() {
             </TouchableOpacity>
           </>
         ) : (
+          // the create load form
           <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
             <View style={styles.form}>
               <Text style={styles.label}>Residence</Text>
@@ -285,6 +342,7 @@ export default function Share() {
                   onSelect={handleSelectResidence}
                 />
               </View>
+              {/* Machine dropdown will only appear after residence has been selected */}
               {selectedResidenceName && (
                 <>
                   <Text style={styles.label}>Machine</Text>
@@ -316,14 +374,14 @@ export default function Share() {
                 style={styles.input}
                 value={laundryDetails}
                 onChangeText={setLaundryDetails}
-                placeholder="e.g. Towels only, warm wash"
+                placeholder="e.g. Bedsheets only, starting load at 10am"
               />
               <View style={styles.createButton}>
                 <TouchableOpacity
                   onPress={handleCreateLoad}
-                  style={styles.joinButton}
+                  style={styles.button}
                 >
-                  <Text style={styles.joinButtonText}> Create Your Load </Text>
+                  <Text style={styles.buttonText}> Create Your Load </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -362,19 +420,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: responsiveWidth(5),
-  },
-  button: {
-    paddingHorizontal: responsiveWidth(2),
-    borderRadius: 50,
-    flex: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#EF7C00",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
   },
 
   tabSwitcher: {
@@ -437,14 +482,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 4,
   },
-  joinButton: {
+  button: {
     marginTop: 8,
     backgroundColor: "#007bff",
     paddingVertical: 6,
     borderRadius: 6,
     alignItems: "center",
   },
-  joinButtonText: {
+  buttonText: {
     color: "white",
     fontWeight: "600",
   },

@@ -9,6 +9,9 @@ from configurations import get_db
 from database import schemas, models
 from auth import get_current_user
 
+from util import send_telegram_message
+
+
 router = APIRouter(
     prefix="/share",
     tags=["share"],
@@ -42,11 +45,13 @@ async def get_machines_by_residence(user: user_dependency,
                             detail='Authentication Failed')
     query = text("""
                  SELECT 
+                    shares.share_id,
                     users.telegram_handle, 
                     residences.residence_name, 
                     machines.machine_name,
                     shares.capacity,
-                    shares.laundry_notes
+                    shares.laundry_notes,
+                    shares_users.user_id
                 FROM shares 
                  INNER JOIN users
                   ON shares.user_creator = users.telegram_id
@@ -54,20 +59,41 @@ async def get_machines_by_residence(user: user_dependency,
                   ON shares.machine_id = machines.machine_id
                  INNER JOIN residences
                   ON machines.residence_id = residences.residence_id
+                 LEFT JOIN shares_users
+                  ON shares_users.share_id = shares.share_id
+                WHERE shares.started = False
                 """)
     result = await db.execute(query)
-    loads = [dict(m) for m in result.mappings().all()]
+    all_loads = [dict(m) for m in result.mappings().all()]
 
-    print(loads)
+
+    loads = {}
+    for load in all_loads:
+        if load["user_id"]:
+            load["user_id"] = [load["user_id"]]
+        else:
+            load["user_id"] = []
+        if load["share_id"] not in loads:
+            loads[load["share_id"]] = load
+        else:
+            loads[load["share_id"]]["user_id"] += load["user_id"]
+
+
+    loads = list(loads.values())
+
     for i in range(len(loads)):
         loads[i]["residence"] = loads[i].pop("residence_name")
         loads[i]["user"] = loads[i].pop("telegram_handle")
         loads[i]["machine"] = loads[i].pop("machine_name")
         loads[i]["notes"] = loads[i].pop("laundry_notes")
-    return loads
+        loads[i]["participants"] = loads[i].pop("user_id")
+    return {"loads": loads,
+            "user_handle": user["handle"],
+            "user_id": user["user_id"]}
+            
 
 #/{residence_id} to return all the machines that corresponds to the residence
-@router.get("/{residence_id}")
+@router.get("/residence/{residence_id}")
 async def get_machines_based_on_residence(residence_id: int,
                                     user: user_dependency,
                                     db: AsyncSession = Depends(get_db)):
@@ -85,7 +111,6 @@ async def get_machines_based_on_residence(residence_id: int,
         machines[i]["value"] = machines[i].pop("machine_id")
     print(machines)
     return {
-        "user_handle": user["handle"],
         "machines": machines
     }
 
@@ -113,4 +138,102 @@ async def create_load(body: schemas.CreateLoad,
     await db.commit()
 
     return {"message" : "Load has been created successfully"}
+
+
+#Joins a Load
+@router.post("/join_load/{share_id}")
+async def join_load(share_id: int,
+                        user: user_dependency,
+                        db: AsyncSession = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail='Authentication Failed')
+    ## we will start with a check if capacity has been reached already or not
+
+    ## possible errors where the user themselves try joining, or a user who is already in the
+    ## shared load tries joining will not occur as they do not have access to the join button
+    query = text("""
+        SELECT COUNT(user_id)
+        FROM shares_users
+        WHERE shares_users.share_id = :share_id
+    """)
+
+    query2 = text("""
+        SELECT capacity
+        FROM shares
+        WHERE shares.share_id = :share_id
+    """)
+    result = await db.execute(query, {"share_id": share_id})
+    result2 = await db.execute(query2, {"share_id": share_id})
+    participant_number = result.scalars().first()
+    ## we get capacity from database instead of passing in from frontend 
+    ## in case frontend does not have latest data
+    capacity = result2.scalars().first() 
+    
+    if participant_number + 1 >= capacity:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail='Capacity for this load has been reached')
+    
+    ## the actual joining load part
+    query3 = text("""
+        INSERT INTO shares_users (share_id, user_id)
+        VALUES (:share_id, :user_id)
+    """)
+
+    await db.execute(query3, {"share_id": share_id, "user_id": user["user_id"]})
+
+
+    query4 = text("""
+        SELECT shares.user_creator, machines.machine_name
+        FROM shares
+        INNER JOIN machines
+         on shares.machine_id = machines.machine_id
+        WHERE shares.share_id = :share_id
+                  """)
+    row = await db.execute(query4, {"share_id": share_id, "user_id": user["user_id"]})
+    load_data = row.mappings().first()
+    load_creator_id = load_data["user_creator"]
+    load_machine_name = load_data["machine_name"]
+
+    await send_telegram_message(load_creator_id, f"✅ @{user["handle"]} has joined your load on machine {load_machine_name}")
+
+    await db.commit()
+    return {"message" : "Load has been joined successfully"}
+
+
+#Quits a Load
+@router.post("/quit_load/{share_id}")
+async def quit_load(share_id: int,
+                        user: user_dependency,
+                        db: AsyncSession = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail='Authentication Failed')
+    
+    query = text("""
+        DELETE FROM shares_users 
+        WHERE share_id = :share_id AND user_id = :user_id
+    """)
+
+    await db.execute(query, {"share_id": share_id, "user_id": user["user_id"]})
+
+    query2 = text("""
+        SELECT shares.user_creator, machines.machine_name
+        FROM shares
+        INNER JOIN machines
+         on shares.machine_id = machines.machine_id
+        WHERE shares.share_id = :share_id
+                  """)
+    row = await db.execute(query2, {"share_id": share_id, "user_id": user["user_id"]})
+    load_data = row.mappings().first()
+    load_creator_id = load_data["user_creator"]
+    load_machine_name = load_data["machine_name"]
+
+    await send_telegram_message(load_creator_id, f"❌ @{user["handle"]} has quit your load on machine {load_machine_name}")
+
+
+    await db.commit()
+
+    return {"message" : "Load has been quit successfully"}
+
 
