@@ -208,7 +208,19 @@ export default function Share() {
         console.log(response.data.message);
         fetchLoads();
       })
-      .catch((error) => Alert.alert("Error", error));
+      .catch((error) => {
+        let message = "Something went wrong.";
+
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.detail
+        ) {
+          message = error.response.data.detail;
+        }
+
+        Alert.alert("Error", message);
+      });
   };
 
   const handleQuitLoad = (share_id: number) => {
@@ -305,7 +317,19 @@ export default function Share() {
           { cancelable: false }
         );
       })
-      .catch((error) => Alert.alert("Error", error));
+      .catch((error) => {
+        let message = "Something went wrong.";
+
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.detail
+        ) {
+          message = error.response.data.detail;
+        }
+
+        Alert.alert("Error", message);
+      });
   };
 
   useFocusEffect(fetchResidences);

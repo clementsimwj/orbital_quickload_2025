@@ -250,6 +250,19 @@ async def start_machine(machine_id: int,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
     
+
+    query0 = text("""
+        SELECT status
+        FROM machines
+        WHERE machine_id = :machine_id
+    """)
+
+    row = await db.execute(query0, {"machine_id" : machine_id})
+    row_data = row.mappings().first()
+
+    if row_data["status"] != "available":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This machine is not available for use currently")
+
     time_start = datetime.now(timezone(timedelta(hours=8)))
     time_end = time_start + timedelta(minutes=body.duration)
     query = text("""

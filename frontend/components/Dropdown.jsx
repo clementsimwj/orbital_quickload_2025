@@ -31,7 +31,7 @@ const Dropdown = ({ label, items, onSelect, value }) => {
     <View>
       <TouchableOpacity style={styles.dropdownHeader} onPress={toggleDropdown}>
         <Text style={{ flex: 1, fontSize: RFValue(15) }}>
-          {value ? selected?.label : label}
+          {value || value == 0 ? selected?.label : label}
         </Text>
         <Image
           style={{
