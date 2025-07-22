@@ -1,6 +1,3 @@
-##continue working on this, so i can just import these functions to the other python files
-## maybe make the card/form a component
-
 import asyncio
 import httpx
 import os
@@ -17,18 +14,35 @@ async def machine_complete_updater(machine_id: int, delay_minutes: int, db: Asyn
         # mark machine as complete
         query = text("UPDATE machines SET status = 'complete' WHERE machine_id = :machine_id")
         await db.execute(query, {"machine_id": machine_id})
-        await db.commit()
 
-        # get telegram id
+        # get telegram id for main user
         result = await db.execute(
-            text("SELECT telegram_id FROM notifications WHERE machine_id = :machine_id AND done = false"),
+            text("SELECT telegram_id, share_id FROM notifications WHERE machine_id = :machine_id AND done = false"),
             {"machine_id": machine_id}
         )
-        row = result.fetchone()
+        row = result.mappings().first()
+        print(row)
+        share_id = None
         if row:
-            chat_id = row.telegram_id
-            print(chat_id)
-            await send_telegram_message(chat_id, f"✅ Your laundry on machine {machine_id} is complete!")
+            chat_id_arr = [row.telegram_id]
+            share_id = row.share_id
+
+        # if it is a shared load
+        if share_id:
+            query = text("""
+                SELECT user_id
+                FROM shares_users
+                WHERE share_id = :share_id
+            """)
+            result2 = await db.execute(query, {"share_id": share_id})
+            row2 = result2.mappings().all()
+            if row2:
+                for row in row2:
+                    chat_id_arr.append(row.user_id)
+        print(chat_id_arr)
+        await db.commit()
+        for id in chat_id_arr: 
+            await send_telegram_message(id, f"✅ Your laundry on machine {machine_id} is complete!")
 
 async def send_telegram_message(chat_id: str, message: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"

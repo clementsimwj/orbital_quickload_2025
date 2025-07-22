@@ -22,6 +22,7 @@ import { useRouter, Redirect, useFocusEffect } from "expo-router";
 import KeyboardAvoidingContatiner from "@/components/KeyboardAvoidingContainer";
 import { useAuth } from "@/context/AuthContext";
 import Dropdown from "@/components/Dropdown";
+import SetTimer from "@/components/SetTimer";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -33,6 +34,7 @@ interface ShareLoad {
   capacity: number;
   notes: string;
   participants: number[];
+  machine_id: number;
 }
 
 interface Residence {
@@ -76,6 +78,12 @@ export default function Share() {
   // all the shared loads created, to be fill with data from database
   const [loads, setLoads] = useState<ShareLoad[]>([]);
 
+  // all the needed states for start a load
+  const [visible, setVisible] = useState<boolean>(false);
+  const [startMachine, setStartMachine] = useState<string>("");
+  const [startMachineId, setStartMachineId] = useState<number>(0);
+  const [shareId, setShareId] = useState<number>(0);
+
   // gets the corresponding machines based on the selected residence
   useEffect(() => {
     if (selectedResidenceName) {
@@ -104,6 +112,8 @@ export default function Share() {
     console.log("Selected: ", item);
     setSelectedResidence(item.value);
     setSelectedResidenceName(item.label);
+    setSelectedMachine(null);
+    setSelectedMachineId(null);
   };
 
   // used in the machine dropdown for create a load
@@ -155,6 +165,7 @@ export default function Share() {
     setLaundryDetails("");
     setCapacity(2);
     setSelectedMachine(null);
+    setSelectedMachineId(null);
   };
 
   const handleCreateLoad = () => {
@@ -212,7 +223,16 @@ export default function Share() {
       .catch((error) => Alert.alert("Error", error));
   };
 
-  const handleStartLoad = () => {}; //work on this
+  const handleStartLoad = (
+    machine_id: number,
+    machine_name: string,
+    share_id: number
+  ) => {
+    setStartMachine(machine_name);
+    setStartMachineId(machine_id);
+    setShareId(share_id);
+    setVisible(true);
+  };
 
   const renderLoadCard = ({ item }: { item: ShareLoad }) => (
     <View style={styles.card}>
@@ -227,7 +247,9 @@ export default function Share() {
       {item.user == userData ? (
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#12C72F" }]}
-          onPress={() => handleStartLoad()} ////work on start load////////////////////////////////////
+          onPress={() =>
+            handleStartLoad(item.machine_id, item.machine, item.share_id)
+          }
         >
           <Text style={styles.buttonText}>Start Load</Text>
         </TouchableOpacity>
@@ -250,6 +272,41 @@ export default function Share() {
       )}
     </View>
   );
+
+  const handleStart = (duration: number, share_id: number) => {
+    console.log(
+      `Starting machine_id: ${startMachineId} (${startMachine}) for ${duration} mins`
+    );
+    axios
+      .post(
+        `${API_URL}/share/start_load/${startMachineId}`,
+        {
+          duration: duration,
+          share_id: share_id,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then((message) => {
+        console.log(message.data);
+        Alert.alert(
+          "Load Started",
+          "Your load has been started succesfully! You can track the status and collect your laundry from the home page later.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                fetchLoads();
+                setVisible(false);
+              },
+            },
+          ],
+          { cancelable: false }
+        );
+      })
+      .catch((error) => Alert.alert("Error", error));
+  };
 
   useFocusEffect(fetchResidences);
   useFocusEffect(fetchLoads);
@@ -329,6 +386,14 @@ export default function Share() {
             >
               <Text style={styles.fabText}> ↻ </Text>
             </TouchableOpacity>
+            <SetTimer
+              visible={visible}
+              selectedMachineId={startMachineId}
+              selectedMachineName={startMachine}
+              onStart={handleStart}
+              onClose={() => setVisible(false)}
+              share_id={shareId}
+            />
           </>
         ) : (
           // the create load form
@@ -340,6 +405,7 @@ export default function Share() {
                   label="Select your Residence: "
                   items={residences}
                   onSelect={handleSelectResidence}
+                  value={selectedResidenceName}
                 />
               </View>
               {/* Machine dropdown will only appear after residence has been selected */}
@@ -351,6 +417,7 @@ export default function Share() {
                       label="Select your Machine: "
                       items={machineList}
                       onSelect={handleSelectMachine}
+                      value={selectedMachine}
                     />
                   </View>
                 </>
@@ -364,6 +431,7 @@ export default function Share() {
                   label="2"
                   items={[{ label: "2" }, { label: "3" }, { label: "4" }]}
                   onSelect={(item: any) => setCapacity(parseInt(item.label))}
+                  value="2"
                 />
               </View>
 

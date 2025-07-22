@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, Modal, StyleSheet, TouchableOpacity } from "react-native";
 
-type SetTimer = {
+type BaseProps = {
   visible: boolean;
   selectedMachineId: number;
   selectedMachineName: string;
-  onStart: (duration: number) => void;
   onClose: () => void;
 };
+
+type SetTimer =
+  | (BaseProps & {
+      onStart: (duration: number, share_id: number) => void;
+      share_id: number;
+    })
+  | (BaseProps & {
+      onStart: (duration: number) => void;
+      share_id?: undefined;
+    });
 
 const SetTimer: React.FC<SetTimer> = ({
   visible,
@@ -15,6 +24,7 @@ const SetTimer: React.FC<SetTimer> = ({
   selectedMachineName,
   onStart,
   onClose,
+  share_id,
 }) => {
   const [time, setTime] = useState<number>(30);
 
@@ -48,11 +58,17 @@ const SetTimer: React.FC<SetTimer> = ({
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity onPress={() => {
-            console.log("Start button pressed with time: ", time);
-            onStart(time);
-            onClose();
-          }} style={styles.startButton}>
+          <TouchableOpacity
+            onPress={() => {
+              console.log("Start button pressed with time: ", time);
+              if (share_id !== undefined) {
+                onStart(time, share_id);
+              } else {
+                onStart(time);
+              }
+            }}
+            style={styles.startButton}
+          >
             <Text style={{ color: "white", fontSize: 18 }}>Start</Text>
           </TouchableOpacity>
         </View>

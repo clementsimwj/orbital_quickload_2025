@@ -14,7 +14,7 @@ import {
 } from "react-native-responsive-dimensions";
 import { RFValue } from "react-native-responsive-fontsize";
 
-const Dropdown = ({ label, items, onSelect }) => {
+const Dropdown = ({ label, items, onSelect, value }) => {
   const [visible, setVisible] = useState(false);
   const [selected, setSelected] = useState(null);
 
@@ -26,11 +26,12 @@ const Dropdown = ({ label, items, onSelect }) => {
     onSelect && onSelect(item);
   };
 
+
   return (
     <View>
       <TouchableOpacity style={styles.dropdownHeader} onPress={toggleDropdown}>
         <Text style={{ flex: 1, fontSize: RFValue(15) }}>
-          {selected?.label || label}
+          {value ? selected?.label : label}
         </Text>
         <Image
           style={{

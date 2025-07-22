@@ -266,6 +266,7 @@ export default function Index() {
           label="Select your Residences: "
           items={items}
           onSelect={handleSelect}
+          value={selectedResidence}
         />
       </View>
       <Text

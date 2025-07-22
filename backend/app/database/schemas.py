@@ -33,6 +33,10 @@ class MachineOut(BaseModel):
 class TimerStart(BaseModel):
     duration: int #in minutes
 
+class TimerStartShared(BaseModel):
+    duration: int #in minutes
+    share_id: int
+
 
 class MachinesByResidenceOut(BaseModel):
     user_id : int 

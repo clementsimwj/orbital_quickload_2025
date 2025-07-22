@@ -3,13 +3,15 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import insert, select, text
 from sqlalchemy.orm import joinedload
+from datetime import datetime, timedelta, timezone
+import asyncio
 
 from typing import Annotated, List
 from configurations import get_db
 from database import schemas, models
 from auth import get_current_user
 
-from util import send_telegram_message
+from util import send_telegram_message, machine_complete_updater
 
 
 router = APIRouter(
@@ -49,6 +51,7 @@ async def get_machines_by_residence(user: user_dependency,
                     users.telegram_handle, 
                     residences.residence_name, 
                     machines.machine_name,
+                    machines.machine_id,
                     shares.capacity,
                     shares.laundry_notes,
                     shares_users.user_id
@@ -235,5 +238,47 @@ async def quit_load(share_id: int,
     await db.commit()
 
     return {"message" : "Load has been quit successfully"}
+
+
+#Starts a Shared Load
+@router.post("/start_load/{machine_id}")
+async def start_machine(machine_id: int,
+                        body: schemas.TimerStartShared,
+                        user: user_dependency,
+                        db: AsyncSession = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail='Authentication Failed')
+    
+    time_start = datetime.now(timezone(timedelta(hours=8)))
+    time_end = time_start + timedelta(minutes=body.duration)
+    query = text("""
+        INSERT INTO notifications (time_start, time_end, machine_id, telegram_id, share_id)
+        VALUES (:time_start, :time_end, :machine_id, :telegram_id, :share_id)
+    """)
+    params = {
+        "time_start": time_start.replace(tzinfo=None),
+        "time_end": time_end.replace(tzinfo=None),
+        "machine_id": machine_id,
+        "telegram_id": user["user_id"],
+        "share_id": body.share_id
+    }
+    query2 = text("""UPDATE machines
+                     SET status = 'in use'
+                     WHERE machine_id = :machine_id""")
+    query3 = text("""
+        UPDATE shares
+        SET started = True
+        WHERE share_id = :share_id
+    """)
+    
+    await db.execute(query, params)
+    await db.execute(query2, {"machine_id" : machine_id})
+    await db.execute(query3, {"share_id" : body.share_id})
+    await db.commit()
+
+    #Background task
+    asyncio.create_task(machine_complete_updater(machine_id, body.duration, db))
+    return {"message" : "Timer has been set successfully"}
 
 
