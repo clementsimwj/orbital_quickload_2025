@@ -24,6 +24,7 @@ import KeyboardAvoidingContatiner from "@/components/KeyboardAvoidingContainer";
 import { useAuth } from "@/context/AuthContext";
 import Dropdown from "@/components/Dropdown";
 import SetTimer from "@/components/SetTimer";
+import SharedLoadCard from "@/components/SharedLoadCard";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -49,7 +50,7 @@ interface Machine {
 }
 
 export default function Share() {
-  const [userData, setUserData] = useState<String | null>(null);
+  const [userData, setUserData] = useState<string | null>(null);
   const { token, isAuthenticated, isLoading } = useAuth();
   const [userId, setUserId] = useState<number>(0);
 
@@ -173,6 +174,7 @@ export default function Share() {
     setSelectedMachineId(null);
   };
 
+  // The following are all the functions needed for Find a Load tab
   const handleCreateLoad = () => {
     if (!selectedMachine) {
       Alert.alert("Please select a machine");
@@ -276,7 +278,6 @@ export default function Share() {
     setVisible(true);
   };
 
-  const deleteImage = "../../assets/images/delete.png";
   const confirmDelete = (share_id: number) => {
     Alert.alert(
       "Confirm Delete",
@@ -316,56 +317,6 @@ export default function Share() {
       })
       .finally(() => fetchLoads());
   };
-
-  const renderLoadCard = ({ item }: { item: ShareLoad }) => (
-    <View style={styles.card}>
-      <View style={styles.cardTitleContainer}>
-        <Text style={styles.cardTitle}>{item.user}</Text>
-        {item.user == userData && (
-          <TouchableOpacity onPress={() => confirmDelete(item.share_id)}>
-            <Image
-              style={styles.icon}
-              source={require(deleteImage)}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-      <Text>🧺 Machine: {item.machine}</Text>
-      <Text>🏠 Residence: {item.residence} </Text>
-      <Text>
-        👤 Participants: {item.participants.length + 1} / {item.capacity}
-      </Text>
-      <Text>📝 Note: {item.notes}</Text>
-
-      {item.user == userData ? (
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#12C72F" }]}
-          onPress={() =>
-            handleStartLoad(item.machine_id, item.machine, item.share_id)
-          }
-        >
-          <Text style={styles.buttonText}>Start Load</Text>
-        </TouchableOpacity>
-      ) : item.participants.includes(userId) ? (
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "red" }]}
-          onPress={() => handleQuitLoad(item.share_id)}
-        >
-          <Text style={styles.buttonText}>Quit Load</Text>
-        </TouchableOpacity>
-      ) : item.participants.length + 1 == item.capacity ? (
-        <></>
-      ) : (
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => handleJoinLoad(item.share_id)}
-        >
-          <Text style={styles.buttonText}>Join Load</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
 
   const handleStart = (duration: number, share_id: number) => {
     console.log(
@@ -490,7 +441,17 @@ export default function Share() {
               // Find Load cards
               <FlatList
                 data={loads}
-                renderItem={renderLoadCard}
+                renderItem={({ item }: { item: ShareLoad }) => (
+                  <SharedLoadCard
+                    item={item}
+                    userData={userData}
+                    userId={userId}
+                    confirmDelete={confirmDelete}
+                    handleStartLoad={handleStartLoad}
+                    handleJoinLoad={handleJoinLoad}
+                    handleQuitLoad={handleQuitLoad}
+                  />
+                )}
                 contentContainerStyle={{ paddingBottom: 20 }}
                 ListEmptyComponent={() => (
                   <View style={styles.emptyContainer}>
@@ -661,21 +622,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "center",
   },
-  card: {
-    paddingHorizontal: responsiveWidth(3),
-    paddingVertical: responsiveHeight(2),
-    marginHorizontal: responsiveWidth(5),
-    backgroundColor: "#ffffffff",
-    borderRadius: 10,
-    marginBottom: 12,
-  },
   createButton: {
     marginVertical: responsiveHeight(2),
-  },
-  cardTitle: {
-    fontWeight: "bold",
-    marginBottom: 4,
-    textAlign: "left",
   },
   button: {
     marginTop: 8,
@@ -726,17 +674,5 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     paddingHorizontal: responsiveWidth(10),
-  },
-  icon: {
-    marginHorizontal: responsiveWidth(1),
-    width: responsiveWidth(6),
-    height: responsiveHeight(6),
-  },
-  cardTitleContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flex: 1,
-    marginRight: responsiveWidth(2),
   },
 });
