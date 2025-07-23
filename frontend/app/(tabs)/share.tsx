@@ -321,13 +321,15 @@ export default function Share() {
     <View style={styles.card}>
       <View style={styles.cardTitleContainer}>
         <Text style={styles.cardTitle}>{item.user}</Text>
-        <TouchableOpacity onPress={() => confirmDelete(item.share_id)}>
-          <Image
-            style={styles.icon}
-            source={require(deleteImage)}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+        {item.user == userData && (
+          <TouchableOpacity onPress={() => confirmDelete(item.share_id)}>
+            <Image
+              style={styles.icon}
+              source={require(deleteImage)}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        )}
       </View>
       <Text>🧺 Machine: {item.machine}</Text>
       <Text>🏠 Residence: {item.residence} </Text>
