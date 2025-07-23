@@ -5,6 +5,7 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
   Button,
   Alert,
   FlatList,
@@ -49,7 +50,7 @@ interface Machine {
 
 export default function Share() {
   const [userData, setUserData] = useState<String | null>(null);
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, isLoading } = useAuth();
   const [userId, setUserId] = useState<number>(0);
 
   // list of available residences for selection
@@ -83,6 +84,8 @@ export default function Share() {
   const [startMachine, setStartMachine] = useState<string>("");
   const [startMachineId, setStartMachineId] = useState<number>(0);
   const [shareId, setShareId] = useState<number>(0);
+
+  const [loading, setLoading] = useState(true);
 
   // gets the corresponding machines based on the selected residence
   useEffect(() => {
@@ -141,6 +144,7 @@ export default function Share() {
 
   const fetchLoads = useCallback(() => {
     console.log("Fetching SharedLoads...");
+    setLoading(true);
     if (isAuthenticated && token) {
       axios
         .get(`${API_URL}/share/shared_loads`, {
@@ -156,7 +160,8 @@ export default function Share() {
         .catch((error) => {
           Alert.alert("Error", "Failed to fetch loads.");
           console.error(error);
-        });
+        })
+        .finally(() => setLoading(false));
     }
   }, []);
 
@@ -190,12 +195,25 @@ export default function Share() {
         )
         .then((response) => {
           console.log(response.data.message);
-          fetchLoads();
         })
-        .catch((error) => Alert.alert("Error", error));
+        .catch((error) => {
+          let message = "Something went wrong.";
 
-      setActiveTab("findLoad");
-      resetForm();
+          if (
+            error.response &&
+            error.response.data &&
+            error.response.data.detail
+          ) {
+            message = error.response.data.detail;
+          }
+
+          Alert.alert("Error", message);
+        })
+        .finally(() => {
+          setActiveTab("findLoad");
+          fetchLoads();
+          resetForm();
+        });
     }
   };
 
@@ -206,7 +224,6 @@ export default function Share() {
       })
       .then((response) => {
         console.log(response.data.message);
-        fetchLoads();
       })
       .catch((error) => {
         let message = "Something went wrong.";
@@ -220,7 +237,8 @@ export default function Share() {
         }
 
         Alert.alert("Error", message);
-      });
+      })
+      .finally(() => fetchLoads());
   };
 
   const handleQuitLoad = (share_id: number) => {
@@ -230,9 +248,21 @@ export default function Share() {
       })
       .then((response) => {
         console.log(response.data.message);
-        fetchLoads();
       })
-      .catch((error) => Alert.alert("Error", error));
+      .catch((error) => {
+        let message = "Something went wrong.";
+
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.detail
+        ) {
+          message = error.response.data.detail;
+        }
+
+        Alert.alert("Error", message);
+      })
+      .finally(() => fetchLoads());
   };
 
   const handleStartLoad = (
@@ -309,7 +339,6 @@ export default function Share() {
             {
               text: "OK",
               onPress: () => {
-                fetchLoads();
                 setVisible(false);
               },
             },
@@ -329,11 +358,20 @@ export default function Share() {
         }
 
         Alert.alert("Error", message);
-      });
+      })
+      .finally(() => fetchLoads());
   };
 
   useFocusEffect(fetchResidences);
   useFocusEffect(fetchLoads);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#EF7C00" />
+      </View>
+    );
+  }
 
   if (!isAuthenticated) return <Redirect href="/login" />;
 
@@ -394,12 +432,24 @@ export default function Share() {
         {/* Tab Content */}
         {activeTab === "findLoad" ? (
           <>
-            {/* Find Load cards */}
-            <FlatList
-              data={loads}
-              renderItem={renderLoadCard}
-              contentContainerStyle={{ paddingBottom: 20 }}
-            />
+            {loading ? (
+              <ActivityIndicator size="large" color="#EF7C00" />
+            ) : (
+              // Find Load cards
+              <FlatList
+                data={loads}
+                renderItem={renderLoadCard}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                ListEmptyComponent={() => (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>
+                      There are no active shared loads currently {"\n"} {"\n"}
+                      Feel free to create one from the Create a Load tab
+                    </Text>
+                  </View>
+                )}
+              />
+            )}
             {/* Refresh Button fetches all shared loads and list of residences from database */}
             <TouchableOpacity
               style={styles.fab}
@@ -610,5 +660,18 @@ const styles = StyleSheet.create({
     fontSize: RFValue(30),
     lineHeight: 30,
     fontWeight: "bold",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: responsiveHeight(20),
+  },
+  emptyText: {
+    fontSize: RFValue(12),
+    color: "#EF7C00",
+    fontStyle: "italic",
+    textAlign: "center",
+    paddingHorizontal: responsiveWidth(10),
   },
 });

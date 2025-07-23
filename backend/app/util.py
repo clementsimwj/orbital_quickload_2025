@@ -17,15 +17,19 @@ async def machine_complete_updater(machine_id: int, delay_minutes: int, db: Asyn
 
         # get telegram id for main user
         result = await db.execute(
-            text("SELECT telegram_id, share_id FROM notifications WHERE machine_id = :machine_id AND done = false"),
+            text("""SELECT notifications.telegram_id, notifications.share_id, machines.machine_name 
+                 FROM notifications
+                 INNER JOIN machines
+                  on notifications.machine_id = machines.machine_id
+                 WHERE notifications.machine_id = :machine_id AND notifications.done = false"""),
             {"machine_id": machine_id}
         )
         row = result.mappings().first()
-        print(row)
         share_id = None
         if row:
             chat_id_arr = [row.telegram_id]
             share_id = row.share_id
+            machine_name = row.machine_name
 
         # if it is a shared load
         if share_id:
@@ -39,10 +43,9 @@ async def machine_complete_updater(machine_id: int, delay_minutes: int, db: Asyn
             if row2:
                 for row in row2:
                     chat_id_arr.append(row.user_id)
-        print(chat_id_arr)
         await db.commit()
         for id in chat_id_arr: 
-            await send_telegram_message(id, f"✅ Your laundry on machine {machine_id} is complete!")
+            await send_telegram_message(id, f"✅ Your laundry on {machine_name} is complete!")
 
 async def send_telegram_message(chat_id: str, message: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"

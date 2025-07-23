@@ -127,6 +127,14 @@ async def create_load(body: schemas.CreateLoad,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
     
+    ## Check how many shared loads the user has already created, we set a cap at 2 to prevent spamming
+    query0 = text("SELECT COUNT(share_id) FROM shares WHERE user_creator = :user_id and started = False")
+    result = await db.execute(query0, {"user_id": user["user_id"]})
+    share_num = result.scalars().first()
+
+    if share_num >= 2:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Each user can only create 2 active Shared Loads at once")
+    
     query = text("""
         INSERT INTO shares (user_creator, machine_id, laundry_notes, capacity)
         VALUES (:user_id, :machine_id, :notes, :capacity)
@@ -151,6 +159,19 @@ async def join_load(share_id: int,
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
+    
+    query0 = text("SELECT * FROM shares WHERE share_id = :share_id")
+    result = await db.execute(query0, {"share_id": share_id})
+    share = result.fetchone()
+
+
+    #Validate If Share exists
+    if not share:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Share Load not found")
+    if share.started == True:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Share Load has already been started by creator")
+
+
     ## we will start with a check if capacity has been reached already or not
 
     ## possible errors where the user themselves try joining, or a user who is already in the
@@ -161,44 +182,38 @@ async def join_load(share_id: int,
         WHERE shares_users.share_id = :share_id
     """)
 
-    query2 = text("""
-        SELECT capacity
-        FROM shares
-        WHERE shares.share_id = :share_id
-    """)
     result = await db.execute(query, {"share_id": share_id})
-    result2 = await db.execute(query2, {"share_id": share_id})
     participant_number = result.scalars().first()
     ## we get capacity from database instead of passing in from frontend 
     ## in case frontend does not have latest data
-    capacity = result2.scalars().first() 
+    capacity = share.capacity
     
     if participant_number + 1 >= capacity:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
                             detail='Capacity for this load has been reached')
     
     ## the actual joining load part
-    query3 = text("""
+    query2 = text("""
         INSERT INTO shares_users (share_id, user_id)
         VALUES (:share_id, :user_id)
     """)
 
-    await db.execute(query3, {"share_id": share_id, "user_id": user["user_id"]})
+    await db.execute(query2, {"share_id": share_id, "user_id": user["user_id"]})
 
 
-    query4 = text("""
+    query3 = text("""
         SELECT shares.user_creator, machines.machine_name
         FROM shares
         INNER JOIN machines
          on shares.machine_id = machines.machine_id
         WHERE shares.share_id = :share_id
                   """)
-    row = await db.execute(query4, {"share_id": share_id, "user_id": user["user_id"]})
+    row = await db.execute(query3, {"share_id": share_id, "user_id": user["user_id"]})
     load_data = row.mappings().first()
     load_creator_id = load_data["user_creator"]
     load_machine_name = load_data["machine_name"]
 
-    await send_telegram_message(load_creator_id, f"✅ @{user["handle"]} has joined your load on machine {load_machine_name}")
+    await send_telegram_message(load_creator_id, f"✅ @{user["handle"]} has joined your shared load on {load_machine_name}")
 
     await db.commit()
     return {"message" : "Load has been joined successfully"}
@@ -213,6 +228,17 @@ async def quit_load(share_id: int,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail='Authentication Failed')
     
+    query0 = text("SELECT * FROM shares WHERE share_id = :share_id")
+    result = await db.execute(query0, {"share_id": share_id})
+    share = result.fetchone()
+
+
+    #Validate if Share Load exists
+    if not share:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Share Load not found")
+    if share.started == True:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Share Load has already been started by creator")
+
     query = text("""
         DELETE FROM shares_users 
         WHERE share_id = :share_id AND user_id = :user_id
@@ -232,7 +258,7 @@ async def quit_load(share_id: int,
     load_creator_id = load_data["user_creator"]
     load_machine_name = load_data["machine_name"]
 
-    await send_telegram_message(load_creator_id, f"❌ @{user["handle"]} has quit your load on machine {load_machine_name}")
+    await send_telegram_message(load_creator_id, f"❌ @{user["handle"]} has quit your shared load on {load_machine_name}")
 
 
     await db.commit()
