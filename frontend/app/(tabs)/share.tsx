@@ -276,9 +276,59 @@ export default function Share() {
     setVisible(true);
   };
 
+  const deleteImage = "../../assets/images/delete.png";
+  const confirmDelete = (share_id: number) => {
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this item?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => handleDelete(share_id),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const handleDelete = (share_id: number) => {
+    axios
+      .post(`${API_URL}/share/delete_load/${share_id}`, null, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        console.log(response.data.message);
+      })
+      .catch((error) => {
+        let message = "Something went wrong.";
+
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.detail
+        ) {
+          message = error.response.data.detail;
+        }
+
+        Alert.alert("Error", message);
+      })
+      .finally(() => fetchLoads());
+  };
+
   const renderLoadCard = ({ item }: { item: ShareLoad }) => (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>{item.user}</Text>
+      <View style={styles.cardTitleContainer}>
+        <Text style={styles.cardTitle}>{item.user}</Text>
+        <TouchableOpacity onPress={() => confirmDelete(item.share_id)}>
+          <Image
+            style={styles.icon}
+            source={require(deleteImage)}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View>
       <Text>🧺 Machine: {item.machine}</Text>
       <Text>🏠 Residence: {item.residence} </Text>
       <Text>
@@ -623,6 +673,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontWeight: "bold",
     marginBottom: 4,
+    textAlign: "left",
   },
   button: {
     marginTop: 8,
@@ -673,5 +724,17 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     paddingHorizontal: responsiveWidth(10),
+  },
+  icon: {
+    marginHorizontal: responsiveWidth(1),
+    width: responsiveWidth(6),
+    height: responsiveHeight(6),
+  },
+  cardTitleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flex: 1,
+    marginRight: responsiveWidth(2),
   },
 });

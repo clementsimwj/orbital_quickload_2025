@@ -321,3 +321,42 @@ async def start_machine(machine_id: int,
     return {"message" : "Timer has been set successfully"}
 
 
+#Deletes a Shared Load
+@router.post("/delete_load/{share_id}")
+async def delete_load(share_id: int,
+                        user: user_dependency,
+                        db: AsyncSession = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail='Authentication Failed')
+    
+    query0 = text("SELECT * FROM shares WHERE share_id = :share_id")
+    result = await db.execute(query0, {"share_id": share_id})
+    share = result.fetchone()
+
+
+    #Validate if Share Load exists
+    if not share:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Share Load not found")
+    if share.started == True:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Share Load has already been started by creator")
+    
+
+    query = text("""
+        DELETE FROM shares_users 
+        WHERE share_id = :share_id
+    """)
+
+    query2 = text("""
+        DELETE FROM shares 
+        WHERE share_id = :share_id
+    """)
+
+    await db.execute(query, {"share_id": share_id})
+    await db.execute(query2, {"share_id": share_id})
+
+    await db.commit()
+
+    return {"message" : "Load has been delete successfully"}
+
+
