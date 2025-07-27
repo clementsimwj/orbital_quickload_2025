@@ -213,7 +213,7 @@ async def join_load(share_id: int,
     load_creator_id = load_data["user_creator"]
     load_machine_name = load_data["machine_name"]
 
-    await send_telegram_message(load_creator_id, f"✅ @{user["handle"]} has joined your shared load on {load_machine_name}")
+    await send_telegram_message(load_creator_id, f'✅ @{user["handle"]} has joined your shared load on {load_machine_name}')
 
     await db.commit()
     return {"message" : "Load has been joined successfully"}
