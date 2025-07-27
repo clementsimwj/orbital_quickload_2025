@@ -1,7 +1,7 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
 import * as SecureStore from 'expo-secure-store';
 
-const PREF_KEY = 'preferred_machines';
 
 type PreferencesContextType = {
   preferredMachines: string[];
@@ -18,13 +18,19 @@ type PreferencesProviderProps = {
 
 export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({ children }) => {
   const [preferredMachines, setPreferredMachines] = useState<string[]>([]);
+  const { username } = useAuth();
+
+  const prefKey = username ? `preferred_machines_${username}` : null;
 
   useEffect(() => {
     const loadPreferences = async () => {
+      if (!prefKey) return;
       try {
-        const stored = await SecureStore.getItemAsync(PREF_KEY);
+        const stored = await SecureStore.getItemAsync(prefKey);
         if (stored) {
           setPreferredMachines(JSON.parse(stored));
+        } else {
+          setPreferredMachines([]); // Clear state if no stored data
         }
       } catch (error) {
         console.error('Error loading preferences:', error);
@@ -32,11 +38,12 @@ export const PreferencesProvider: React.FC<PreferencesProviderProps> = ({ childr
     };
 
     loadPreferences();
-  }, []);
+  }, [prefKey]);
 
   const savePreferences = async (prefs: string[]) => {
+    if (!prefKey) return;
     try {
-      await SecureStore.setItemAsync(PREF_KEY, JSON.stringify(prefs));
+      await SecureStore.setItemAsync(prefKey, JSON.stringify(prefs));
     } catch (error) {
       console.error('Error saving preferences:', error);
     }

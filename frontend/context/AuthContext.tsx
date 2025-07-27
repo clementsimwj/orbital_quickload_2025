@@ -7,6 +7,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 type AuthContextType = {
   token: string | null;
+  username: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -15,6 +16,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>({
   token: null,
+  username: null,
   login: async () => false,
   logout: () => {},
   isAuthenticated: false,
@@ -23,19 +25,26 @@ const AuthContext = createContext<AuthContextType>({
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     const loadToken = async () => {
       try {
         const storedToken = await SecureStore.getItemAsync("access_token");
+        const storedUsername = await SecureStore.getItemAsync("username");
         if (storedToken) {
           setToken(storedToken);
+        }
+        if (storedUsername) {
+          setUsername(storedUsername);
         }
       } catch (e) {
         console.log("Error loading token", e);
         Alert.alert("Error", "Could not load token");
         await SecureStore.deleteItemAsync("access_token");
+        await SecureStore.deleteItemAsync("username");
         setToken(null);
+        setUsername(null);
       } finally {
         setIsLoading(false);
       }
@@ -56,7 +65,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Logging In...")
       const { access_token } = response.data;
       await SecureStore.setItemAsync("access_token", access_token);
+      await SecureStore.setItemAsync("username", username);
       setToken(access_token);
+      setUsername(username);
       return true;
     } catch (error: unknown) {
       let message = "Unknown error";
@@ -80,7 +91,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   console.log("isAuthenticated: " + isAuthenticated);
   return (
     <AuthContext.Provider
-      value={{ token, login, logout, isAuthenticated, isLoading }}
+      value={{ token, username, login, logout, isAuthenticated, isLoading }}
     >
       {children}
     </AuthContext.Provider>
