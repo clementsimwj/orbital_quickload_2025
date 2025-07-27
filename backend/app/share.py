@@ -258,7 +258,7 @@ async def quit_load(share_id: int,
     load_creator_id = load_data["user_creator"]
     load_machine_name = load_data["machine_name"]
 
-    await send_telegram_message(load_creator_id, f"❌ @{user["handle"]} has quit your shared load on {load_machine_name}")
+    await send_telegram_message(load_creator_id, f'❌ @{user["handle"]} has quit your shared load on {load_machine_name}')
 
 
     await db.commit()
