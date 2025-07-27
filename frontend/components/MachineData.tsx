@@ -5,8 +5,10 @@ import {
   responsiveHeight,
 } from "react-native-responsive-dimensions";
 import { RFValue } from "react-native-responsive-fontsize";
+import { usePreferences } from "../context/PreferencesContext";
 
 type Props = {
+  id: number;
   name: string;
   type: string;
   status: string | null;
@@ -19,6 +21,7 @@ type Props = {
 };
 
 const MachineData: React.FC<Props> = ({
+  id,
   name,
   status,
   type,
@@ -29,6 +32,16 @@ const MachineData: React.FC<Props> = ({
   isSelected,
   children,
 }) => {
+  //Taken from PreferencesContext
+  const {
+    isPreferred,
+    addMachine,
+    removeMachine,
+  } = usePreferences();
+  const preferenceFull = "../assets/images/preferencecover.png";
+  const preferenceOutline = "../assets/images/preferenceoutline.png";
+  const preferred = isPreferred(id.toString());
+  const preferenceIcon = preferred ? require(preferenceFull) : require(preferenceOutline);
   const availableImage = "../assets/images/availableImage.png";
   const hourglassImage = "../assets/images/hourglass.png";
   const collectImage = "../assets/images/collect.png";
@@ -43,6 +56,14 @@ const MachineData: React.FC<Props> = ({
     ? require(collectImage)
     : require(hourglassImage);
 
+  const togglePreference = async () => {
+    if(preferred) {
+      await removeMachine(id.toString());
+    } else {
+      await addMachine(id.toString());
+    }
+  };
+
   return (
     <TouchableOpacity
       onPress={isPressable ? onPress : undefined}
@@ -53,12 +74,16 @@ const MachineData: React.FC<Props> = ({
       <View style={styles.statusContainer}>
         <Image style={styles.icon} source={iconURL} resizeMode="contain" />
         {status === "in use" && timeRemaining !== null && (
-          <Text>{`Time remaining: ${Math.round(
+          <Text>{`${Math.round(
             timeRemaining / 60 //converting from seconds to minutes
           )} mins`}</Text>
         )}
       </View>
       {isSelected && children}
+      <TouchableOpacity onPress={togglePreference} style={styles.preferenceButton} >
+        <Image source={preferenceIcon} style={styles.preferenceIcon}/>
+      </TouchableOpacity>
+
     </TouchableOpacity>
   );
 };
@@ -98,5 +123,13 @@ const styles = StyleSheet.create({
   statusText: {
     fontWeight: "600",
     fontStyle: "italic",
+  },
+  preferenceButton: {
+    marginRight: responsiveWidth(2)
+  },
+  preferenceIcon: {
+    width: responsiveWidth(8),
+    height: responsiveHeight(8),
+    resizeMode: "contain",
   },
 });

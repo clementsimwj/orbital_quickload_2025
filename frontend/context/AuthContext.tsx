@@ -53,6 +53,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         params.toString(),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
+      console.log("Logging In...")
       const { access_token } = response.data;
       await SecureStore.setItemAsync("access_token", access_token);
       setToken(access_token);

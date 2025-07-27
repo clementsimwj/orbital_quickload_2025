@@ -25,6 +25,7 @@ import MachineData from "@/components/MachineData";
 import Dropdown from "@/components/Dropdown";
 import axios from "axios";
 import SetTimer from "@/components/SetTimer";
+import { usePreferences } from "../../context/PreferencesContext";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -46,6 +47,13 @@ export default function Index() {
   const machinesRef = useRef<Washer[]>([]);
   const [machines, setMachines] = useState<Washer[]>([]);
   const [loadingMachines, setLoadingMachines] = useState(false);
+  const [showPreferred, setShowPreferred] = useState(false);
+  const { isPreferred } = usePreferences();
+
+  const displayedMachines = showPreferred 
+    ? machines.filter((m) => isPreferred(m.machine_id.toString()))
+    : machines;
+
 
   const items = [
     { value: 0, label: "Ridge View Residential College" },
@@ -63,6 +71,7 @@ export default function Index() {
   const renderMachine = useCallback(
     ({ item }: { item: Washer }) => (
       <MachineData
+        id={item.machine_id}
         type={item.machine_type}
         name={item.machine_name}
         status={item.status}
@@ -269,18 +278,32 @@ export default function Index() {
           value={selectedResidence}
         />
       </View>
-      <Text
-        style={{ fontSize: RFValue(15), color: "#c8cac9", fontWeight: "bold" }}
-      >
-        Washing Machine Status:
-      </Text>
+      <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: responsiveHeight(2)}}>
+        <Text
+          style={{ fontSize: RFValue(15), color: "#c8cac9", fontWeight: "bold" }}
+        >
+          Washing Machine Status:
+        </Text>
+        <TouchableOpacity style={{backgroundColor: "#EF7C00", 
+                                  borderRadius: 30,
+                                  marginLeft : responsiveWidth(2),
+                                  width: responsiveHeight(6),
+                                  height: responsiveHeight(6),
+                                  justifyContent: "center",
+                                  alignItems: "center"}}
+                          onPress={() => setShowPreferred((prev) => !prev)}>
+          <Image resizeMode="contain" style={{width: responsiveWidth(6),height:responsiveHeight(6)}}
+            source={require("../../assets/images/whitestar.png")}/>
+        </TouchableOpacity>
+      </View>
       {selectedResidence !== undefined && (
         <FlatList
-          data={machines}
+          data={displayedMachines}
           keyExtractor={(item) => item.machine_id.toString()}
           renderItem={renderMachine}
           extraData={selectedMachineId}
           contentContainerStyle={{
+            marginVertical: responsiveHeight(2),
             padding: 16,
             paddingBottom: 100,
           }}
