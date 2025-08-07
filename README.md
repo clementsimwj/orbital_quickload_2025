@@ -13,13 +13,14 @@ Database: PostgreSQL
 3. Sharing laundry loads with fellow student residences
 
 ## Project Structure
+```
 main/
 ├── frontend/
 │ └── .env.example
 ├── backend/
 │ └── .env.example
 └── README.md
-
+```
 ---
 
 ## 🚀 Getting Started
