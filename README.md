@@ -41,6 +41,8 @@ git clone https://github.com/clementsimwj/orbital_quickload_2025.git
 cd backend
 # Create a new .env file
 touch .env
+# Copy the contents from .env.example to .env
+cp .env.example .env
 #Edit .env to add your real values
 #Install dependencies
 cd app
@@ -55,6 +57,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 cd frontend
 # Create a new .env file
 touch .env
+# Copy the contents from .env.example to .env
+cp .env.example .env
 #Edit .env to add your real values
 #Install dependencies
 npm install
