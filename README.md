@@ -7,6 +7,11 @@ Frontend: React Native, Expo Go
 Backend: FastAPI
 Database: PostgreSQL
 
+##Features
+1. Laundry Machine Monitoring System
+2. Laundry marketplace
+3. Sharing laundry loads with fellow student residences
+
 ## Project Structure
 main/
 ├── frontend/
